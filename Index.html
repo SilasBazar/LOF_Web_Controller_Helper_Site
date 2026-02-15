@@ -186,10 +186,10 @@
             targetHost = 'localhost'; 
         }
 
-        const targetUrl = `http://${targetHost}:8081`;
+        const targetUrl = `http://${targetHost}`;
         
         // Show the target IP (helpful for debugging)
-        ipDisplay.querySelector('span').innerText = targetHost + ":8081";
+        ipDisplay.querySelector('span').innerText = targetHost;
         ipDisplay.classList.remove('opacity-0');
 
         btn.addEventListener('click', async () => {
@@ -221,7 +221,7 @@
                 btnText.innerText = originalContent;
                 
                 // Update error text to show the IP we TRIED to hit
-                errorIpDisplay.innerText = targetHost + ":8081";
+                errorIpDisplay.innerText = targetHost;
                 
                 popup.classList.remove('hidden');
             }
