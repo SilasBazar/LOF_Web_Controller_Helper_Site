@@ -28,6 +28,14 @@
         .game-card:hover {
             transform: rotate(0deg) scale(1.02) !important;
         }
+
+        /* Loading spinner animation */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-fast {
+            animation: spin 1s linear infinite;
+        }
     </style>
 </head>
 <!-- Background: Misty Teal/Cyan gradient -->
@@ -41,7 +49,6 @@
     <div class="absolute bottom-20 right-10 w-48 h-48 bg-[#319795] rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
 
     <!-- Main Instruction Card -->
-    <!-- The rotation (-1deg) adds that playful, non-rigid game feel -->
     <main class="game-card relative bg-white w-full max-w-md rounded-[2rem] shadow-[0_12px_0_rgba(0,0,0,0.15)] border-4 border-white transform -rotate-1 z-10 pb-2">
         
         <!-- Header Section -->
@@ -87,9 +94,13 @@
                 <div class="flex-1">
                     <p class="text-gray-800 font-bold text-lg mb-2">Tap:</p>
                     <!-- Visual representation of the button they need to find -->
-                    <div class="bg-[#4CAF50] text-white font-chunky text-2xl py-3 px-6 rounded-xl shadow-[0_4px_0_#2E7D32] text-center transform active:translate-y-1 active:shadow-none transition-all cursor-default select-none tracking-wide">
-                        JOIN GAME
-                    </div>
+                    <button id="join-btn" class="w-full bg-[#4CAF50] text-white font-chunky text-2xl py-3 px-6 rounded-xl shadow-[0_4px_0_#2E7D32] text-center transform active:translate-y-1 active:shadow-none transition-all cursor-pointer select-none tracking-wide hover:brightness-110 flex justify-center items-center gap-2">
+                        <span>JOIN GAME</span>
+                    </button>
+                    <!-- IP Display (Small, for debugging) -->
+                    <p id="target-ip-display" class="text-center text-xs text-gray-400 mt-2 font-bold opacity-0 transition-opacity">
+                        Target: <span class="font-mono">searching...</span>
+                    </p>
                 </div>
             </div>
 
@@ -109,11 +120,122 @@
         </div>
     </main>
 
+    <!-- Error Popup Modal -->
+    <div id="error-popup" class="fixed inset-0 flex items-center justify-center bg-black/50 z-50 hidden backdrop-blur-sm p-4">
+        <div class="bg-white border-4 border-[#E88D35] rounded-[2rem] p-6 max-w-sm w-full shadow-[0_8px_0_#C66A1B] relative transform rotate-1 animate-[float_0.3s_ease-out]">
+            <!-- Close Button -->
+            <button id="close-popup" class="absolute -top-4 -right-4 bg-[#E53E3E] hover:bg-[#C53030] text-white w-10 h-10 rounded-full font-black flex items-center justify-center shadow-lg border-2 border-white transition-transform hover:scale-110">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            
+            <div class="text-center mb-4">
+                <div class="inline-block bg-red-100 p-3 rounded-full mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h2 class="font-chunky text-2xl text-gray-800 uppercase tracking-wide">Connection Failed</h2>
+            </div>
+            
+            <div class="space-y-3 font-nunito text-gray-700 font-bold text-sm">
+                <p>We couldn't reach the game at <span id="error-ip-display" class="bg-gray-100 px-2 py-0.5 rounded text-gray-500 font-mono text-xs border border-gray-200">...</span>.</p>
+                
+                <p class="text-[#E88D35] text-lg mt-2">Try these fixes:</p>
+                <ul class="space-y-2">
+                    <li class="flex gap-2 items-start">
+                        <span class="text-[#E88D35] mt-1">•</span>
+                        <span>Ensure phone & PC are on the same Wi-Fi.</span>
+                    </li>
+                    <li class="flex gap-2 items-start">
+                        <span class="text-[#E88D35] mt-1">•</span>
+                        <span>Check if Windows Firewall is blocking the game.</span>
+                    </li>
+                    <li class="flex gap-2 items-start">
+                        <span class="text-[#E88D35] mt-1">•</span>
+                        <span>Rescan the QR code if your PC's IP changed.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
     <!-- Decorative Hills (Covering bottom of screen) -->
     <!-- Back Hill (Darker) -->
     <div class="fixed -bottom-20 -left-[20%] w-[150%] h-80 bg-[#388E3C] rounded-[100%] z-0 pointer-events-none shadow-lg"></div>
     <!-- Front Hill (Lighter) -->
     <div class="fixed -bottom-32 -right-[20%] w-[150%] h-80 bg-[#4CAF50] rounded-[100%] z-0 pointer-events-none shadow-lg"></div>
 
+    <script>
+        const btn = document.getElementById('join-btn');
+        const popup = document.getElementById('error-popup');
+        const closeBtn = document.getElementById('close-popup');
+        const btnText = btn.querySelector('span');
+        const ipDisplay = document.getElementById('target-ip-display');
+        const errorIpDisplay = document.getElementById('error-ip-display');
+
+        // 1. GET THE IP FROM URL PARAMETERS
+        // This expects a URL like: https://mysite.com?ip=192.168.1.15
+        const urlParams = new URLSearchParams(window.location.search);
+        let targetHost = urlParams.get('ip');
+
+        // Fallback: If no IP in URL, assume localhost (for testing on PC)
+        // or prompt user (though we want zero input, so we default to standard port)
+        if (!targetHost) {
+            targetHost = 'localhost'; 
+        }
+
+        const targetUrl = `http://${targetHost}:8081`;
+        
+        // Show the target IP (helpful for debugging)
+        ipDisplay.querySelector('span').innerText = targetHost + ":8081";
+        ipDisplay.classList.remove('opacity-0');
+
+        btn.addEventListener('click', async () => {
+            const originalContent = btnText.innerText;
+            
+            // Loading State
+            btnText.innerText = "CONNECTING...";
+            const spinner = document.createElement('div');
+            spinner.className = "w-5 h-5 border-4 border-white/30 border-t-white rounded-full animate-spin-fast absolute left-4";
+            btn.classList.add('relative');
+            btn.appendChild(spinner);
+            
+            try {
+                // Check connectivity
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 sec timeout
+
+                // Try to hit the PC
+                await fetch(targetUrl, { mode: 'no-cors', signal: controller.signal });
+                
+                clearTimeout(timeoutId);
+                
+                // Success! Redirect.
+                window.location.href = targetUrl;
+
+            } catch (error) {
+                // Failure
+                btn.removeChild(spinner);
+                btnText.innerText = originalContent;
+                
+                // Update error text to show the IP we TRIED to hit
+                errorIpDisplay.innerText = targetHost + ":8081";
+                
+                popup.classList.remove('hidden');
+            }
+        });
+
+        closeBtn.addEventListener('click', () => {
+            popup.classList.add('hidden');
+        });
+        
+        popup.addEventListener('click', (e) => {
+            if (e.target === popup) {
+                popup.classList.add('hidden');
+            }
+        });
+    </script>
 </body>
 </html>
