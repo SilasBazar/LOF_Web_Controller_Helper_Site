@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4FD1C5"> <!-- Matches background for mobile chrome -->
     <title>Leap of Faith - Controller Setup</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -196,9 +197,13 @@
         }
 
         // We assume targetHost includes the port (e.g. 192.168.1.1:8081)
-        const targetUrl = `http://${targetHost}`;
+        // Ensure proper protocol prefix logic
+        let targetUrl = targetHost;
+        if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+            targetUrl = 'http://' + targetUrl;
+        }
         
-        // Show the target IP
+        // Show the target IP (stripped of protocol for display)
         ipDisplay.querySelector('span').innerText = targetHost;
         ipDisplay.classList.remove('opacity-0');
 
@@ -213,14 +218,29 @@
             btn.classList.add('relative');
             btn.appendChild(spinner);
             btn.disabled = true;
+
+            // SMART NAVIGATION LOGIC:
+            // Check for Mixed Content block (HTTPS site -> HTTP game)
+            const isPageSecure = window.location.protocol === 'https:';
+            const isTargetInsecure = targetUrl.startsWith('http:');
+
+            if (isPageSecure && isTargetInsecure) {
+                // Browser WILL block any fetch check here. 
+                // We must skip the check and assume the IP is correct to ensure navigation works.
+                console.log("Mixed Content detected: Skipping fetch check and navigating directly.");
+                setTimeout(() => {
+                     window.location.href = targetUrl;
+                }, 800); // Small delay just so user sees "Connecting"
+                return;
+            }
             
+            // If protocols match (HTTP->HTTP or HTTPS->HTTPS), we can safely check first.
             try {
                 // Check connectivity
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 sec timeout
 
                 // Attempt fetch. 
-                // NOTE: This often fails on HTTPS->HTTP due to mixed content, triggering the catch block.
                 await fetch(targetUrl, { mode: 'no-cors', signal: controller.signal });
                 
                 clearTimeout(timeoutId);
