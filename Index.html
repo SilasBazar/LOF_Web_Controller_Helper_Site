@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#4FD1C5">
     <title>Leap of Faith - Controller Setup</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="controller-target.js"></script>
+    <script src="https://cdn.tailwindcss.com" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Titan+One&display=swap" rel="stylesheet">
@@ -30,16 +31,9 @@
             transform: rotate(0deg) scale(1.02) !important;
         }
 
-        /* Loading spinner */
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .animate-spin-fast {
-            animation: spin 1s linear infinite;
-        }
     </style>
 </head>
-<body class="bg-gradient-to-b from-[#4FD1C5] via-[#81E6D9] to-[#CCFBF1] min-h-screen flex items-center justify-center p-4 font-nunito overflow-hidden relative">
+<body class="bg-gradient-to-b from-[#4FD1C5] via-[#81E6D9] to-[#CCFBF1] min-h-screen flex items-start justify-start md:items-center md:justify-center p-4 font-nunito overflow-x-hidden overflow-y-auto relative">
 
     <!-- Atmospheric Background Elements -->
     <div class="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-[#2C7A7B] to-transparent opacity-20 pointer-events-none"></div>
@@ -47,7 +41,7 @@
     <div class="absolute bottom-20 right-10 w-48 h-48 bg-[#319795] rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
 
     <!-- Main Instruction Card -->
-    <main class="game-card relative bg-white w-full max-w-md rounded-[2rem] shadow-[0_12px_0_rgba(0,0,0,0.15)] border-4 border-white transform -rotate-1 z-10 pb-2">
+    <main class="game-card relative bg-white w-full max-w-md mx-auto rounded-[2rem] shadow-[0_12px_0_rgba(0,0,0,0.15)] border-4 border-white transform -rotate-1 z-10 pb-2">
         
         <!-- Header -->
         <div class="bg-gradient-to-r from-[#FFC107] to-[#FF9800] rounded-t-[1.7rem] p-6 text-center relative overflow-hidden">
@@ -73,7 +67,7 @@
                         Check that your phone and PC are on the <span class="text-[#039BE5]">same Wi-Fi</span>.
                     </p>
                     <p class="text-gray-400 font-semibold text-sm mt-1 bg-gray-50 inline-block px-2 py-1 rounded-md border border-gray-100">
-                        (This is usually where it fails)
+                        Guest Wi-Fi may block devices from talking to each other.
                     </p>
                 </div>
             </div>
@@ -85,13 +79,13 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
                     </svg>
                 </div>
-                <div class="flex-1">
+                <div class="flex-1 min-w-0">
                     <p class="text-gray-800 font-bold text-lg mb-2">Tap:</p>
                     <button id="join-btn" class="w-full bg-[#4CAF50] text-white font-chunky text-2xl py-3 px-6 rounded-xl shadow-[0_4px_0_#2E7D32] text-center transform active:translate-y-1 active:shadow-none transition-all cursor-pointer select-none tracking-wide hover:brightness-110 flex justify-center items-center gap-2">
                         <span>JOIN GAME</span>
                     </button>
                     <p id="target-ip-display" class="text-center text-xs text-gray-400 mt-2 font-bold opacity-0 transition-opacity">
-                        Target: <span class="font-mono">searching...</span>
+                        Target: <span class="font-mono break-all">searching...</span>
                     </p>
                 </div>
             </div>
@@ -127,27 +121,19 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                 </div>
-                <h2 class="font-chunky text-2xl text-gray-800 uppercase tracking-wide">Connection Check Failed</h2>
+                <h2 class="font-chunky text-2xl text-gray-800 uppercase tracking-wide">Invalid Controller Link</h2>
             </div>
             
             <div class="space-y-3 font-nunito text-gray-700 font-bold text-sm text-center">
-                <p>We couldn't confirm the connection to <br> <span id="error-ip-display" class="bg-gray-100 px-2 py-0.5 rounded text-gray-500 font-mono text-xs border border-gray-200">...</span></p>
+                <p>This QR code did not contain a valid game address:<br> <span id="error-ip-display" class="bg-gray-100 px-2 py-0.5 rounded text-gray-500 font-mono text-xs border border-gray-200">...</span></p>
                 
                 <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 text-left">
-                    <p class="text-xs text-orange-800 font-extrabold mb-1">POSSIBLE CAUSES:</p>
+                    <p class="text-xs text-orange-800 font-extrabold mb-1">WHAT TO DO:</p>
                     <ul class="list-disc list-inside text-xs text-orange-700 space-y-1">
-                        <li>The game isn't running on your PC.</li>
-                        <li>Your phone and PC aren't on the same Wi-Fi.</li>
-                        <li>Windows Firewall is blocking the game.</li>
+                        <li>Restart the phone-controller server in the game.</li>
+                        <li>Scan the newly generated QR code.</li>
+                        <li>Do not reuse an old screenshot of the code.</li>
                     </ul>
-                </div>
-
-                <div class="mt-4">
-                    <p class="text-[10px] text-gray-500 mb-1">If you're sure everything is correct:</p>
-                    <!-- The Force Button -->
-                    <button id="force-join-btn" class="w-full bg-[#4CAF50] hover:bg-[#43A047] text-white font-black text-lg py-3 px-4 rounded-xl shadow-[0_4px_0_#2E7D32] transform active:translate-y-1 active:shadow-none transition-all">
-                        TRY OPENING ANYWAY
-                    </button>
                 </div>
 
             </div>
@@ -162,75 +148,41 @@
         const btn = document.getElementById('join-btn');
         const popup = document.getElementById('error-popup');
         const closeBtn = document.getElementById('close-popup');
-        const forceBtn = document.getElementById('force-join-btn');
         const btnText = btn.querySelector('span');
         const ipDisplay = document.getElementById('target-ip-display');
         const errorIpDisplay = document.getElementById('error-ip-display');
 
-        // GET IP FROM URL
-        const urlParams = new URLSearchParams(window.location.search);
-        let targetHost = urlParams.get('ip');
+        const targetApi = window.LOFControllerTarget;
+        const rawTarget = targetApi ? targetApi.readControllerTarget(window.location.search, window.location.hash) : null;
+        const targetUrl = targetApi ? targetApi.parseControllerTarget(rawTarget) : null;
 
-        // Fallback
-        if (!targetHost) {
-            targetHost = 'localhost:8081'; 
-        }
-
-        // Ensure protocol
-        let targetUrl = targetHost;
-        if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
-            targetUrl = 'http://' + targetUrl;
-        }
-        
-        // Show IP
-        ipDisplay.querySelector('span').innerText = targetHost;
+        ipDisplay.querySelector('span').innerText = targetUrl || 'invalid link';
         ipDisplay.classList.remove('opacity-0');
 
-        // CLICK HANDLER
-        btn.addEventListener('click', async () => {
-            const originalContent = btnText.innerText;
-            
-            // UI Loading State
-            btnText.innerText = "TESTING...";
-            const spinner = document.createElement('div');
-            spinner.className = "w-5 h-5 border-4 border-white/30 border-t-white rounded-full animate-spin-fast absolute left-4";
-            btn.classList.add('relative');
-            btn.appendChild(spinner);
+        function showInvalidTarget() {
+            errorIpDisplay.innerText = rawTarget || 'missing ip parameter';
+            popup.classList.remove('hidden');
+        }
+
+        if (!targetUrl) {
+            btnText.innerText = 'INVALID QR CODE';
             btn.disabled = true;
+            showInvalidTarget();
+        }
 
-            try {
-                // We ALWAYS test now.
-                // 2 second timeout
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2000);
-
-                // This line will THROW an error if:
-                // 1. The game is down.
-                // 2. The browser blocks Mixed Content (HTTPS -> HTTP).
-                await fetch(targetUrl, { mode: 'no-cors', signal: controller.signal });
-                
-                clearTimeout(timeoutId);
-                
-                // If we get here, connection is confirmed!
-                window.location.href = targetUrl;
-
-            } catch (error) {
-                // If failed (for ANY reason), show the popup.
-                if (btn.contains(spinner)) btn.removeChild(spinner);
-                btnText.innerText = originalContent;
-                btn.disabled = false;
-                
-                errorIpDisplay.innerText = targetHost;
-                popup.classList.remove('hidden');
+        btn.addEventListener('click', () => {
+            if (!targetUrl) {
+                showInvalidTarget();
+                return;
             }
+
+            // An HTTPS page cannot preflight an HTTP LAN server with fetch.
+            // A top-level navigation from this user gesture is permitted.
+            btnText.innerText = 'OPENING...';
+            btn.disabled = true;
+            window.location.assign(targetUrl);
         });
 
-        // "Try Anyway" - Skips checks and forces navigation
-        forceBtn.addEventListener('click', () => {
-            window.location.href = targetUrl;
-        });
-
-        // Popup Closes
         closeBtn.addEventListener('click', () => {
             popup.classList.add('hidden');
         });
