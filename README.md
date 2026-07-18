@@ -33,11 +33,15 @@ gesture instead.
 ## Test
 
 ```powershell
-node --test
+npm ci
+npm run build
+npm test
 ```
 
-The same command runs in `.github/workflows/test.yml` for every push and pull
-request.
+`styles.css` is generated from `tailwind.css` and the classes in `Index.html`.
+It is committed so the deployed helper has no runtime Tailwind CDN dependency.
+The same build and test commands run in `.github/workflows/test.yml` for every
+push and pull request.
 
 After deploying, test with a newly generated in-game QR code. The displayed
 target must match `SimpleController Plugin: Http server started:` in the game

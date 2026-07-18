@@ -64,8 +64,10 @@ test('page loads the local parser and never preflights the HTTP target', () => {
     const html = fs.readFileSync(path.join(__dirname, '..', 'Index.html'), 'utf8');
     const bodyClasses = html.match(/<body class="([^"]+)"/)[1].split(/\s+/);
     assert.match(html, /<script src="controller-target\.js"><\/script>/);
+    assert.match(html, /<link rel="stylesheet" href="styles\.css">/);
     assert.match(html, /window\.location\.assign\(targetUrl\)/);
     assert.doesNotMatch(html, /fetch\s*\(/);
+    assert.doesNotMatch(html, /cdn\.tailwindcss\.com/);
     assert.ok(bodyClasses.includes('overflow-y-auto'));
     assert.ok(!bodyClasses.includes('overflow-hidden'));
 });
