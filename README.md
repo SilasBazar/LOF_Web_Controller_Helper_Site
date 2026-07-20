@@ -1,7 +1,9 @@
 # Leap of Faith Web Controller Helper
 
-This HTTPS page is the user-facing handoff between the in-game QR code and the
-HTTP controller hosted by the game PC.
+This site hosts both phone-controller entry points:
+
+- `/` is the HTTPS handoff to the HTTP controller hosted by the game PC for LAN play.
+- `/online.html` is the HTTPS/WSS controller for internet play through the Fly relay.
 
 ## URL contract
 
@@ -29,6 +31,16 @@ The helper must not use `fetch()` to test the controller. Browsers block an
 HTTPS page from fetching an HTTP LAN endpoint as mixed content or private
 network access. The Join button performs a top-level navigation from a user
 gesture instead.
+
+Online links use a separate fragment contract and open the controller directly:
+
+```text
+https://leap-of-faith-controller.netlify.app/online.html#v=1&room=<room>&token=<token>
+```
+
+Run `node scripts/sync-online-controller.mjs` from this repository after changing
+`Leap_Of_Faith/controller-web`. Set the production WSS origin in `config.js`
+before deploying.
 
 ## Test
 
