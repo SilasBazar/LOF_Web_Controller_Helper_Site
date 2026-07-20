@@ -156,6 +156,14 @@
         const rawTarget = targetApi ? targetApi.readControllerTarget(window.location.search, window.location.hash) : null;
         const targetUrl = targetApi ? targetApi.parseControllerTarget(rawTarget) : null;
 
+        // Check for online fallback params (r=room, t=token) in the fragment
+        const fragmentParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        const fbRoom = fragmentParams.get('r');
+        const fbToken = fragmentParams.get('t');
+        const fallbackUrl = (fbRoom && fbToken)
+            ? 'online.html#v=1&room=' + encodeURIComponent(fbRoom) + '&token=' + encodeURIComponent(fbToken)
+            : null;
+
         ipDisplay.querySelector('span').innerText = targetUrl || 'invalid link';
         ipDisplay.classList.remove('opacity-0');
 
@@ -180,6 +188,15 @@
             // A top-level navigation from this user gesture is permitted.
             btnText.innerText = 'OPENING...';
             btn.disabled = true;
+
+            // If we have an online fallback and the LAN page hasn't loaded
+            // within 3 seconds, redirect to the online controller.
+            if (fallbackUrl) {
+                setTimeout(() => {
+                    window.location.replace(fallbackUrl);
+                }, 3000);
+            }
+
             window.location.assign(targetUrl);
         });
 
