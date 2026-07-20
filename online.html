@@ -539,6 +539,10 @@
                     <td>Player:</td>
                     <td id="player">null</td>
                 </tr>
+                <tr>
+                    <td>Ping:</td>
+                    <td id="ping">—</td>
+                </tr>
             </table>
         </div>
 
@@ -859,6 +863,18 @@
             }
         }
 
+        let pingIntervalId = null;
+        function startPingInterval() {
+            if (pingIntervalId) return;
+            pingIntervalId = setInterval(() => {
+                sendImmediate('c:ping:' + Date.now());
+            }, 2000);
+        }
+        function stopPingInterval() {
+            if (pingIntervalId) { clearInterval(pingIntervalId); pingIntervalId = null; }
+            document.getElementById('ping').textContent = '—';
+        }
+
         function flushAxisMessages() {
             axisFlushTimer = null;
             if (!gameplayReady || !websocket || websocket.readyState !== WebSocket.OPEN || websocket.bufferedAmount > 16384) {
@@ -1069,6 +1085,14 @@
                     return;
                 }
                 if (message === 'ping') { ws.send('pong'); return; }
+                if (message.startsWith('c:pong:')) {
+                    const sentTime = Number(message.substring(7));
+                    if (sentTime > 0) {
+                        const rtt = Date.now() - sentTime;
+                        document.getElementById('ping').textContent = rtt + 'ms';
+                    }
+                    return;
+                }
                 if (message.startsWith('c:')) {
                     const player = message.substring(2);
                     if (!/^\d{1,3}$/.test(player)) return;
@@ -1077,6 +1101,7 @@
                     reconnectAttempt = 0;
                     releaseAllInputs(true);
                     updateConnectionStatus('connected - Online', true);
+                    startPingInterval();
                     return;
                 }
                 if (message.startsWith('r:')) {
@@ -1093,6 +1118,7 @@
                 axisFlushTimer = null;
                 pendingAxisMessages.clear();
                 releaseAllInputs(false);
+                stopPingInterval();
                 if ([4400, 4403].includes(event.code)) {
                     updateConnectionStatus('join link rejected', false);
                     return;
