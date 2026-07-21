@@ -912,9 +912,9 @@
                 rtcDc.onmessage = (e) => { handleMessage(e.data); };
 
                 rtcPc.createOffer()
-                    .then(offer => rtcPc.setLocalDescription(offer))
-                    .then(() => {
-                        try { websocket.send(JSON.stringify({ v:1, type:'rtc_offer', sdp:{ type:offer.type, sdp:rtcPc.localDescription.sdp } })); } catch {}
+                    .then(offer => rtcPc.setLocalDescription(offer).then(() => offer))
+                    .then(offer => {
+                        try { websocket.send(JSON.stringify({ v:1, type:'rtc_offer', sdp:{ type:offer.type, sdp:offer.sdp } })); } catch {}
                     })
                     .catch(() => {});
 
