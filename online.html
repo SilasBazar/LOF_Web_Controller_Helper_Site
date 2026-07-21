@@ -918,7 +918,7 @@
                     })
                     .catch(() => {});
 
-                rtcTimer = setTimeout(() => { if (!p2pReady) cleanupWebRTC(); }, 5000);
+                rtcTimer = setTimeout(() => { if (!p2pReady) { console.log('WebRTC timeout — staying on relay'); cleanupWebRTC(); } }, 10000);
             } catch { cleanupWebRTC(); }
         }
 
