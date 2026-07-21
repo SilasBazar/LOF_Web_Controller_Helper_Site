@@ -854,6 +854,9 @@
         }
 
         function sendImmediate(message) {
+            if (p2pReady && rtcDc && rtcDc.readyState === 'open') {
+                try { rtcDc.send(message); return; } catch {}
+            }
             if (!gameplayReady || !websocket || websocket.readyState !== WebSocket.OPEN) return;
             try {
                 websocket.send(message);
@@ -873,6 +876,96 @@
         function stopPingInterval() {
             if (pingIntervalId) { clearInterval(pingIntervalId); pingIntervalId = null; }
             document.getElementById('ping').textContent = '—';
+        }
+
+        // --- WebRTC P2P ---
+        let rtcPc = null;
+        let rtcDc = null;
+        let p2pReady = false;
+        let rtcTimer = null;
+
+        function tryWebRTC() {
+            try {
+                rtcPc = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                    ]
+                });
+                rtcDc = rtcPc.createDataChannel('input', { ordered: false, maxRetransmits: 0 });
+
+                rtcPc.onicecandidate = (e) => {
+                    if (e.candidate && e.candidate.candidate) {
+                        try { websocket.send(JSON.stringify({ v:1, type:'rtc_ice', candidate:e.candidate.candidate, mid:e.candidate.sdpMid || '0' })); } catch {}
+                    }
+                };
+
+                rtcDc.onopen = () => {
+                    p2pReady = true;
+                    clearTimeout(rtcTimer);
+                    updateConnectionStatus('connected - P2P', true);
+                };
+                rtcDc.onclose = () => {
+                    p2pReady = false;
+                    if (gameplayReady) updateConnectionStatus('connected - Online', true);
+                };
+                rtcDc.onmessage = (e) => { handleMessage(e.data); };
+
+                rtcPc.createOffer()
+                    .then(offer => rtcPc.setLocalDescription(offer))
+                    .then(() => {
+                        try { websocket.send(JSON.stringify({ v:1, type:'rtc_offer', sdp:{ type:offer.type, sdp:rtcPc.localDescription.sdp } })); } catch {}
+                    })
+                    .catch(() => {});
+
+                rtcTimer = setTimeout(() => { if (!p2pReady) cleanupWebRTC(); }, 5000);
+            } catch { cleanupWebRTC(); }
+        }
+
+        function cleanupWebRTC() {
+            clearTimeout(rtcTimer);
+            try { if (rtcDc) rtcDc.close(); } catch {}
+            try { if (rtcPc) rtcPc.close(); } catch {}
+            rtcPc = null; rtcDc = null; p2pReady = false;
+        }
+
+        function handleRtcSignaling(envelope) {
+            if (envelope.type === 'rtc_answer' && rtcPc) {
+                try { rtcPc.setRemoteDescription(new RTCSessionDescription(envelope.sdp)); } catch {}
+                return true;
+            }
+            if (envelope.type === 'rtc_ice' && rtcPc) {
+                try { rtcPc.addIceCandidate({ candidate: envelope.candidate, sdpMid: envelope.mid || '0' }); } catch {}
+                return true;
+            }
+            return false;
+        }
+
+        function handleMessage(message) {
+            if (message.startsWith('c:pong:')) {
+                const sentTime = Number(message.substring(7));
+                if (sentTime > 0) {
+                    document.getElementById('ping').textContent = (Date.now() - sentTime) + 'ms';
+                }
+                return;
+            }
+            if (message.startsWith('c:')) {
+                const player = message.substring(2);
+                if (!/^\d{1,3}$/.test(player)) return;
+                document.getElementById('player').textContent = player;
+                gameplayReady = true;
+                reconnectAttempt = 0;
+                releaseAllInputs(true);
+                updateConnectionStatus('connected - Online', true);
+                startPingInterval();
+                tryWebRTC();
+                return;
+            }
+            if (message.startsWith('r:')) {
+                rumbleTime = Number(message.substring(2));
+                if (Number.isInteger(rumbleTime) && rumbleTime >= 0 && rumbleTime <= 10000 && navigator.vibrate) navigator.vibrate(rumbleTime);
+                return;
+            }
         }
 
         function flushAxisMessages() {
@@ -1074,6 +1167,7 @@
                     let envelope;
                     try { envelope = JSON.parse(message); } catch (error) { return; }
                     if (envelope.v !== 1) return;
+                    if (handleRtcSignaling(envelope)) return;
                     if (envelope.type === 'relay_ready') {
                         ws.send('c:' + name + ':' + numAxes + ':' + numButtons);
                         updateConnectionStatus(envelope.hostOnline ? 'waiting for game...' : 'game reconnecting...', false);
@@ -1085,30 +1179,7 @@
                     return;
                 }
                 if (message === 'ping') { ws.send('pong'); return; }
-                if (message.startsWith('c:pong:')) {
-                    const sentTime = Number(message.substring(7));
-                    if (sentTime > 0) {
-                        const rtt = Date.now() - sentTime;
-                        document.getElementById('ping').textContent = rtt + 'ms';
-                    }
-                    return;
-                }
-                if (message.startsWith('c:')) {
-                    const player = message.substring(2);
-                    if (!/^\d{1,3}$/.test(player)) return;
-                    document.getElementById('player').textContent = player;
-                    gameplayReady = true;
-                    reconnectAttempt = 0;
-                    releaseAllInputs(true);
-                    updateConnectionStatus('connected - Online', true);
-                    startPingInterval();
-                    return;
-                }
-                if (message.startsWith('r:')) {
-                    rumbleTime = Number(message.substring(2));
-                    if (Number.isInteger(rumbleTime) && rumbleTime >= 0 && rumbleTime <= 10000 && navigator.vibrate) navigator.vibrate(rumbleTime);
-                    return;
-                }
+                handleMessage(message);
             };
             ws.onclose = function(event) {
                 if (generation !== socketGeneration) return;
@@ -1119,6 +1190,7 @@
                 pendingAxisMessages.clear();
                 releaseAllInputs(false);
                 stopPingInterval();
+                cleanupWebRTC();
                 if ([4400, 4403].includes(event.code)) {
                     updateConnectionStatus('join link rejected', false);
                     return;
