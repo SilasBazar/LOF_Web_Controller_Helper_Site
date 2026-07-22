@@ -2,212 +2,1290 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#4FD1C5">
-    <title>Leap of Faith - Controller Setup</title>
-    <script src="controller-target.js"></script>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Titan+One&display=swap" rel="stylesheet">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Mobile Game Controller</title>
+
+    <!-- PWA Meta Tags for iOS Fullscreen Experience -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Game Controller">
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />
+
     <style>
-        /* Custom Font Assignments */
-        .font-chunky { font-family: 'Titan One', cursive; }
-        .font-nunito { font-family: 'Nunito', sans-serif; }
-
-        /* Floating Animation */
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
-        .floater { animation: float 6s ease-in-out infinite; }
-        
-        /* Card Tilt Effect */
-        .game-card {
-            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .game-card:hover {
-            transform: rotate(0deg) scale(1.02) !important;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
+        :root {
+            --joystick-size: 200px;
+            --joystick-margin: 15px;
+            --joystick-knob: 85px;
+            --face-size: 100px;
+            --face-cluster: 180px;
+            --face-gap: 10px;
+            --arc-clearance: calc(0.8 * var(--face-size));
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+            height: 100vh;
+            height: 100dvh;
+            width: 100vw;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            box-sizing: border-box;
+        }
+
+        :fullscreen body,
+        :-webkit-full-screen body,
+        :-moz-full-screen body,
+        :-ms-fullscreen body {
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .controller-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        :fullscreen .controller-container,
+        :-webkit-full-screen .controller-container,
+        :-moz-full-screen .controller-container,
+        :-ms-fullscreen .controller-container {
+            height: 100vh;
+            width: 100vw;
+        }
+
+        :fullscreen *,
+        :-webkit-full-screen *,
+        :-moz-full-screen *,
+        :-ms-fullscreen * {
+            max-width: 100vw;
+            max-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .status-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            transform: none;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-bar table {
+            border-collapse: collapse;
+        }
+
+        .status-bar td {
+            padding: 2px 8px;
+        }
+
+        .fullscreen-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .fullscreen-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .joystick-container {
+            position: absolute;
+            width: var(--joystick-size);
+            height: var(--joystick-size);
+            bottom: calc(var(--joystick-margin) + 20px);
+            z-index: 1;
+            pointer-events: auto;
+        }
+
+        .joystick-left {
+            left: calc(var(--joystick-margin) + 40px);
+            bottom: calc(var(--joystick-margin) + 40px);
+        }
+
+        .joystick-right {
+            right: calc(var(--joystick-margin) + 40px);
+            bottom: calc(var(--joystick-margin) + 40px);
+        }
+
+        .joystick-outer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            pointer-events: none;
+        }
+
+        .joystick-inner {
+            position: absolute;
+            width: var(--joystick-knob);
+            height: var(--joystick-knob);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s ease;
+            pointer-events: none;
+        }
+
+        .joystick-left .joystick-inner {
+            background: linear-gradient(145deg, #ff6b6b, #ee5a52);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .joystick-right .joystick-inner {
+            background: linear-gradient(145deg, #4ecdc4, #44a08d);
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+        }
+
+        .face-buttons-container, .face-buttons-container-left {
+            position: absolute;
+            bottom: calc(var(--joystick-margin) + 40px);
+            width: var(--joystick-size);
+            height: var(--joystick-size);
+            pointer-events: none;
+            z-index: 2;
+        }
+        .face-buttons-container-left {
+            left: calc(var(--joystick-margin) + 40px);
+        }
+        .face-buttons-container {
+            right: calc(var(--joystick-margin) + 40px);
+        }
+
+        .face-button {
+            position: absolute;
+            pointer-events: auto;
+            width: var(--face-size);
+            height: var(--face-size);
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            font-weight: bold;
+            font-size: 20px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            transition: transform 0.1s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .face-button.pressed,
+        .face-button:active {
+            transform: translate(-50%, -50%) scale(0.95);
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.6);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .face-button:hover:not(:active) {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .button-a {
+            background: linear-gradient(145deg, #ff6b6b, #ee5a52);
+            border-color: rgba(255, 107, 107, 0.6);
+            top: calc(50% - 115px);
+            left: calc(50% - 115px);
+            transform: translate(-50%, -50%);
+            width: calc(var(--face-size) * 1.2);
+            height: calc(var(--face-size) * 1.2);
+        }
+
+        .button-b {
+            background: linear-gradient(145deg, #4ecdc4, #44a08d);
+            border-color: rgba(78, 205, 196, 0.6);
+            top: calc(50% - 150px);
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(var(--face-size) * 1.2);
+            height: calc(var(--face-size) * 1.2);
+        }
+
+        .button-y {
+            background: linear-gradient(145deg, #f9ca24, #f0932b);
+            border-color: rgba(249, 202, 36, 0.6);
+            top: calc(50% - 150px);
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .button-lt {
+            background: linear-gradient(145deg, #fd79a8, #fdcb6e);
+            border-color: rgba(253, 121, 168, 0.6);
+            top: 50%;
+            left: calc(50% + 150px);
+            transform: translate(-50%, -50%);
+            width: calc(var(--face-size) * 1.8);
+            height: calc(var(--face-size) * 1.8);
+            border-radius: 25px;
+        }
+
+        .button-lt .icon-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .button-lt .material-symbols-rounded,
+        .button-lb .material-symbols-rounded {
+            font-size: calc(var(--face-size) * 0.9);
+        }
+
+        .button-lt .button-text {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .button-lb {
+            background: linear-gradient(145deg, #fd79a8, #fdcb6e);
+            border-color: rgba(253, 121, 168, 0.6);
+            top: 50%;
+            left: calc(50% - 150px);
+            transform: translate(-50%, -50%);
+            width: calc(var(--face-size) * 1.8);
+            height: calc(var(--face-size) * 1.8);
+            border-radius: 25px;
+            }
+
+            .button-lb .icon-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                height: 100%;
+            }
+
+
+            .button-lb .button-text {
+                font-size: 20px;
+                font-weight: bold;
+                margin-top: 5px;
+            }
+
+        .option-buttons {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+        }
+
+        .option-button {
+            width: 100px;
+            height: 40px;
+            background: linear-gradient(145deg, #6c5ce7, #a29bfe);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+        }
+
+        .option-button:active {
+            transform: scale(0.95);
+        }
+
+        @media (orientation: landscape) and (max-height: 500px) {
+            :root {
+                --joystick-size: 170px;
+                --joystick-knob: 70px;
+                --face-size: 60px;
+            }
+
+            .joystick-left {
+                left: calc(var(--joystick-margin) + 20px);
+            }
+            .joystick-right {
+                right: calc(var(--joystick-margin) + 20px);
+            }
+            .face-buttons-container-left {
+                left: calc(var(--joystick-margin) + 20px);
+            }
+            .face-buttons-container {
+                right: calc(var(--joystick-margin) + 20px);
+            }
+
+            .button-a {
+                left: calc(50% - 100px);
+                top: calc(50% - 100px);
+            }
+            .button-b, .button-y {
+                top: calc(50% - 130px);
+            }
+            .button-lt {
+                top: 50%;
+                left: calc(50% + 150px);
+            }
+            .button-lb {
+                top: 50%;
+                left: calc(50% - 150px);
+            }
+
+            .button-lt .material-symbols-rounded {
+                font-size: calc(var(--face-size) * 0.9);
+            }
+
+            .button-lt .button-text {
+                font-size: 14px;
+            }
+
+            .option-buttons {
+                top: 15px;
+            }
+        }
+
+        .pressed {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        .status-connected { color: #00ff88; }
+        .status-disconnected { color: #ff6b6b; }
+        .orientation-warning { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.9); color: white; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; font-size: 24px; text-align: center; padding: 20px; }
+        .orientation-warning.show { display: flex; }
+        .orientation-icon { font-size: 60px; margin-bottom: 20px; }
+        .orientation-text { margin-bottom: 10px; }
+        .orientation-subtext { font-size: 16px; opacity: 0.8; }
+
+        .landscape-fullscreen-btn {
+            width: 200px;
+            height: 80px;
+            background: linear-gradient(145deg, #6c5ce7, #a29bfe);
+            border: none;
+            border-radius: 40px;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.6);
+            transition: all 0.3s ease;
+        }
+
+        .landscape-fullscreen-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 35px rgba(108, 92, 231, 0.8);
+        }
+
+        .landscape-fullscreen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.3);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+
+        .landscape-fullscreen-overlay.show {
+            display: flex;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10001;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: #2c3e50;
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 15px;
+            color: #e74c3c;
+        }
+
+        /* iOS Install Modal Specific Styles */
+        #iosInstallModal .modal-content h2 {
+             color: #3498db;
+        }
+
+        #iosInstallModal .modal-content p {
+            margin-bottom: 15px;
+        }
+
+        #iosInstallModal .share-icon {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            background-color: #3498db;
+            -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18,16.08c-0.76,0-1.44,0.3-1.96,0.77L8.91,12.7c0.05-0.23,0.09-0.46,0.09-0.7s-0.04-0.47-0.09-0.7l7.05-4.11c0.54,0.5,1.25,0.81,2.04,0.81c1.66,0,3-1.34,3-3s-1.34-3-3-3s-3,1.34-3,3c0,0.24,0.04,0.47,0.09,0.7L8.04,9.81C7.5,9.31,6.79,9,6,9c-1.66,0-3,1.34-3,3s1.34,3,3,3c0.79,0,1.5-0.31,2.04-0.81l7.12,4.16c-0.05,0.21-0.08,0.43-0.08,0.65c0,1.66,1.34,3,3,3s3-1.34,3-3S19.66,16.08,18,16.08z"/></svg>') center center no-repeat;
+            mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18,16.08c-0.76,0-1.44,0.3-1.96,0.77L8.91,12.7c0.05-0.23,0.09-0.46,0.09-0.7s-0.04-0.47-0.09-0.7l7.05-4.11c0.54,0.5,1.25,0.81,2.04,0.81c1.66,0,3-1.34,3-3s-1.34-3-3-3s-3,1.34-3,3c0,0.24,0.04,0.47,0.09,0.7L8.04,9.81C7.5,9.31,6.79,9,6,9c-1.66,0-3,1.34-3,3s1.34,3,3,3c0.79,0,1.5-0.31,2.04-0.81l7.12,4.16c-0.05,0.21-0.08,0.43-0.08,0.65c0,1.66,1.34,3,3,3s3-1.34,3-3S19.66,16.08,18,16.08z"/></svg>') center center no-repeat;
+            vertical-align: middle;
+            margin: 0 4px;
+        }
+
+
+        .modal-content p {
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .modal-content button {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 8px;
+            background: #3498db;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .modal-content button:hover {
+            background: #2980b9;
+        }
+
+        /* Landing view (LAN QR handoff) */
+        .landing {
+            position: fixed;
+            inset: 0;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding: 24px;
+            z-index: 500;
+        }
+
+        .landing-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: #38B2AC;
+            letter-spacing: 1px;
+        }
+
+        .landing-subtitle {
+            font-size: 14px;
+            color: #94a3b8;
+            word-break: break-all;
+        }
+
+        .join-btn {
+            padding: 18px 56px;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #fff;
+            background: linear-gradient(145deg, #38B2AC, #319795);
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(56, 178, 172, 0.4);
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+
+        .join-btn:active {
+            transform: scale(0.96);
+        }
+
+        .join-btn:disabled {
+            opacity: 0.55;
+            cursor: default;
+        }
+
+        .landing-error {
+            max-width: 420px;
+            font-size: 13px;
+            color: #f6ad55;
+            word-break: break-all;
+        }
     </style>
 </head>
-<body class="bg-gradient-to-b from-[#4FD1C5] via-[#81E6D9] to-[#CCFBF1] min-h-screen flex items-start justify-start md:items-center md:justify-center p-4 font-nunito overflow-x-hidden overflow-y-auto relative">
+<body>
+    <div class="orientation-warning" id="orientationWarning">
+        <div class="orientation-icon">📱</div>
+        <div class="orientation-text">Please Rotate to Landscape</div>
+        <div class="orientation-subtext">This controller works best in landscape orientation</div>
+    </div>
 
-    <!-- Atmospheric Background Elements -->
-    <div class="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-[#2C7A7B] to-transparent opacity-20 pointer-events-none"></div>
-    <div class="absolute top-20 left-10 w-32 h-32 bg-[#38B2AC] rounded-full mix-blend-multiply filter blur-2xl opacity-40 animate-pulse"></div>
-    <div class="absolute bottom-20 right-10 w-48 h-48 bg-[#319795] rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
+    <div class="landscape-fullscreen-overlay" id="landscapeFullscreenOverlay">
+        <button class="landscape-fullscreen-btn" id="landscapeFullscreenBtn">⛶ Full Screen</button>
+    </div>
 
-    <!-- Main Instruction Card -->
-    <main class="game-card relative bg-white w-full max-w-md mx-auto rounded-[2rem] shadow-[0_12px_0_rgba(0,0,0,0.15)] border-4 border-white transform md:-rotate-1 z-10 pb-2">
-        
-        <!-- Header -->
-        <div class="bg-gradient-to-r from-[#FFC107] to-[#FF9800] rounded-t-[1.7rem] p-6 text-center relative overflow-hidden">
-            <div class="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDIwIDIwIiBmaWxsPSIjMDAwMDAwIj48Y2lyY2xlIGN4PSIyIiBjeT0iMiIgcj0iMiIvPjwvc3ZnPg==')]"></div>
-            <h1 class="font-chunky text-3xl md:text-4xl text-white drop-shadow-md tracking-wide relative z-10 uppercase">
-                No Controller?
-            </h1>
-            <p class="font-nunito font-black text-white/90 text-lg uppercase tracking-wider mt-1 relative z-10">Use your phone!</p>
+    <div class="controller-container">
+        <div class="status-bar">
+            <table>
+                <tr>
+                    <td>Status:</td>
+                    <td id="connection" class="status-disconnected">disconnected</td>
+                </tr>
+                <tr>
+                    <td>Player:</td>
+                    <td id="player">null</td>
+                </tr>
+                <tr>
+                    <td>Ping:</td>
+                    <td id="ping">—</td>
+                </tr>
+            </table>
         </div>
 
-        <!-- Content -->
-        <div class="p-8 space-y-8">
-            
-            <!-- Step 1: Wifi -->
-            <div class="flex gap-4 items-start">
-                <div class="flex-shrink-0 w-12 h-12 bg-[#E1F5FE] rounded-2xl flex items-center justify-center shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-[#039BE5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
-                    </svg>
-                </div>
-                <div>
-                    <p class="text-gray-800 font-bold text-lg leading-tight">
-                        Check that your phone and PC are on the <span class="text-[#039BE5]">same Wi-Fi</span>.
-                    </p>
-                    <p class="text-gray-400 font-semibold text-sm mt-1 bg-gray-50 inline-block px-2 py-1 rounded-md border border-gray-100">
-                        Guest Wi-Fi may block devices from talking to each other.
-                    </p>
-                </div>
-            </div>
+        <button class="fullscreen-btn" id="fullscreenButton">⛶</button>
 
-            <!-- Step 2: The Action -->
-            <div class="flex gap-4 items-center">
-                <div class="flex-shrink-0 w-12 h-12 bg-[#E8F5E9] rounded-2xl flex items-center justify-center shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-[#43A047]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-                    </svg>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-gray-800 font-bold text-lg mb-2">Tap:</p>
-                    <button id="join-btn" class="w-full bg-[#4CAF50] text-white font-chunky text-2xl py-3 px-6 rounded-xl shadow-[0_4px_0_#2E7D32] text-center transform active:translate-y-1 active:shadow-none transition-all cursor-pointer select-none tracking-wide hover:brightness-110 flex justify-center items-center gap-2">
-                        <span>JOIN GAME</span>
-                    </button>
-                    <p id="target-ip-display" class="text-center text-xs text-gray-400 mt-2 font-bold opacity-0 transition-opacity">
-                        Target: <span class="font-mono break-all">searching...</span>
-                    </p>
-                </div>
-            </div>
-
-            <!-- Step 3: Success -->
-            <div class="flex gap-4 items-center pt-2 border-t-2 border-dashed border-gray-100">
-                <div class="flex-shrink-0 w-12 h-12 bg-[#FFF8E1] rounded-2xl flex items-center justify-center shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-[#FFB300]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                </div>
-                <p class="text-gray-800 font-bold text-xl">
-                    You're in.
-                </p>
-            </div>
-
+        <div class="joystick-container joystick-left" id="joyDivLeft">
+            <div class="joystick-outer"></div>
+            <div class="joystick-inner" id="joyInnerLeft"></div>
         </div>
-    </main>
 
-    <!-- Error Popup Modal -->
-    <div id="error-popup" class="fixed inset-0 flex items-center justify-center bg-black/50 z-50 hidden backdrop-blur-sm p-4">
-        <div class="bg-white border-4 border-[#E88D35] rounded-[2rem] p-6 max-w-sm w-full shadow-[0_8px_0_#C66A1B] relative transform rotate-1 animate-[float_0.3s_ease-out]">
-            <!-- Close Button -->
-            <button id="close-popup" class="absolute -top-4 -right-4 bg-[#E53E3E] hover:bg-[#C53030] text-white w-10 h-10 rounded-full font-black flex items-center justify-center shadow-lg border-2 border-white transition-transform hover:scale-110">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+        <div class="joystick-container joystick-right" id="joyDivRight">
+            <div class="joystick-outer"></div>
+            <div class="joystick-inner" id="joyInnerRight"></div>
+        </div>
+
+        <div class="face-buttons-container-left">
+            <button class="face-button button-b" data-button="1">B</button>
+            <button class="face-button button-lt" data-trigger="5">
+                <div class="icon-container">
+                    <span class="material-symbols-rounded">explosion</span>
+                    <span class="button-text">FIRE</span>
+                </div>
             </button>
-            
-            <div class="text-center mb-4">
-                <div class="inline-block bg-red-100 p-3 rounded-full mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                </div>
-                <h2 class="font-chunky text-2xl text-gray-800 uppercase tracking-wide">Invalid Controller Link</h2>
-            </div>
-            
-            <div class="space-y-3 font-nunito text-gray-700 font-bold text-sm text-center">
-                <p>This QR code did not contain a valid game address:<br> <span id="error-ip-display" class="bg-gray-100 px-2 py-0.5 rounded text-gray-500 font-mono text-xs border border-gray-200">...</span></p>
-                
-                <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 text-left">
-                    <p class="text-xs text-orange-800 font-extrabold mb-1">WHAT TO DO:</p>
-                    <ul class="list-disc list-inside text-xs text-orange-700 space-y-1">
-                        <li>Restart the phone-controller server in the game.</li>
-                        <li>Scan the newly generated QR code.</li>
-                        <li>Do not reuse an old screenshot of the code.</li>
-                    </ul>
-                </div>
+        </div>
 
-            </div>
+        <div class="face-buttons-container">
+            <button class="face-button button-a" data-button="0">A</button>
+            <button class="face-button button-y" data-button="3">Y</button>
+            <button class="face-button button-lb" data-trigger="4">
+                <div class="icon-container">
+                    <span class="material-symbols-rounded">cookie</span>
+                    <span class="button-text">GRAB</span>
+                </div>
+            </button>
+        </div>
+
+        <div class="option-buttons">
+            <button class="option-button" id="refreshButton">REFRESH</button>
+            <button class="option-button" data-button="6">START</button>
         </div>
     </div>
 
-    <!-- Decorative Hills -->
-    <div class="fixed -bottom-20 -left-[20%] w-[150%] h-80 bg-[#388E3C] rounded-[100%] z-0 pointer-events-none shadow-lg"></div>
-    <div class="fixed -bottom-32 -right-[20%] w-[150%] h-80 bg-[#4CAF50] rounded-[100%] z-0 pointer-events-none shadow-lg"></div>
+    <div id="fullscreenWarning" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2>Fullscreen Not Supported</h2>
+            <p>Your browser does not support or allow fullscreen mode. This feature may be blocked by your settings or be unavailable in this context (e.g., inside an iframe).</p>
+            <button id="closeFullscreenWarning">OK</button>
+        </div>
+    </div>
 
+    <!-- New Modal for iOS "Add to Home Screen" instructions -->
+    <div id="iosInstallModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2>Fullscreen Experience</h2>
+            <p>For the best experience, add this controller to your Home Screen.</p>
+            <p>Tap the <span class="share-icon"></span> Share button and then select <strong>'Add to Home Screen'</strong>.</p>
+            <button id="closeIosInstallModal">OK</button>
+        </div>
+    </div>
+
+    <!-- Landing view (LAN QR): shown when the fragment carries an ip= target.
+         The JOIN button navigates to the game's own HTTP page; if that page
+         has not loaded within 3s we fall back to the online controller. -->
+    <div id="landingView" class="landing" style="display: none;">
+        <h1 class="landing-title">Leap of Faith</h1>
+        <p class="landing-subtitle">Game found: <span id="landingTarget"></span></p>
+        <button id="joinBtn" class="join-btn">JOIN GAME</button>
+        <p id="landingError" class="landing-error" style="display: none;"></p>
+    </div>
+
+
+    <script src="config.js"></script>
+    <script src="connection.js"></script>
     <script>
-        const btn = document.getElementById('join-btn');
-        const popup = document.getElementById('error-popup');
-        const closeBtn = document.getElementById('close-popup');
-        const btnText = btn.querySelector('span');
-        const ipDisplay = document.getElementById('target-ip-display');
-        const errorIpDisplay = document.getElementById('error-ip-display');
+        // Session credentials stay in the fragment so the static web host never
+        // receives them in its request logs or referrer headers.
+        const RELAY_URL = window.LOF_RELAY_URL || '';
+        const SESSION = new URLSearchParams(location.hash.slice(1));
+        const ROOM = (SESSION.get('room') || '').toUpperCase();
+        const CONTROLLER_TOKEN = SESSION.get('token') || '';
+        const SESSION_VERSION = SESSION.get('v') || '';
+        const HAS_ONLINE_SESSION = SESSION_VERSION === '1' && /^[A-F0-9]{12}$/.test(ROOM) && /^[a-f0-9]{32}$/i.test(CONTROLLER_TOKEN);
 
-        const targetApi = window.LOFControllerTarget;
-        const rawTarget = targetApi ? targetApi.readControllerTarget(window.location.search, window.location.hash) : null;
-        const targetUrl = targetApi ? targetApi.parseControllerTarget(rawTarget) : null;
+        // LAN landing params: ip= target + optional online fallback (r/t).
+        const RAW_IP = SESSION.get('ip');
+        const LAN_TARGET = parseLanTarget(RAW_IP);
+        const FB_ROOM = (SESSION.get('r') || '').toUpperCase();
+        const FB_TOKEN = SESSION.get('t') || '';
+        const HAS_FALLBACK = /^[A-F0-9]{12}$/.test(FB_ROOM) && /^[a-f0-9]{32}$/i.test(FB_TOKEN);
 
-        // Check for online fallback params (r=room, t=token) in the fragment
-        const fragmentParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-        const fbRoom = fragmentParams.get('r');
-        const fbToken = fragmentParams.get('t');
-        const fallbackUrl = (fbRoom && fbToken)
-            ? 'online.html#v=1&room=' + encodeURIComponent(fbRoom) + '&token=' + encodeURIComponent(fbToken)
-            : null;
+        let websocket = null; // (retired: connection.js owns the socket)
+        let gameplayReady = false;
+        let conn = null;
+        let controlsEnabled = false;
+        const pendingAxisMessages = new Map();
+        let axisFlushTimer = null;
+        let deviceID = -1;
+        let name = 'Mobile Controller';
+        let numAxes = 6;
+        let numButtons = 8;
+        let hasTouch = false;
+        let joyLeftX = 0;
+        let joyLeftY = 0;
+        let joyRightX = 0;
+        let joyRightY = 0;
+        let rumbleTime = -1;
+        let stopRequested = false;
 
-        ipDisplay.querySelector('span').innerText = targetUrl || 'invalid link';
-        ipDisplay.classList.remove('opacity-0');
+        // --- Start of iOS Detection ---
+        const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !window.MSStream;
+        const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator.standalone);
+        // --- End of iOS Detection ---
 
-        function showInvalidTarget() {
-            errorIpDisplay.innerText = rawTarget || 'missing ip parameter';
-            popup.classList.remove('hidden');
+        let leftJoystick = { x: 0, y: 0, isActive: false, touchId: null, lastUpdate: 0 };
+        let rightJoystick = { x: 0, y: 0, isActive: false, touchId: null, lastUpdate: 0 };
+
+        function getControllerId() {
+            const key = 'lof-controller-id-' + ROOM;
+            try {
+                const existing = sessionStorage.getItem(key);
+                if (/^[a-f0-9]{32}$/i.test(existing || '')) return existing;
+                const bytes = new Uint8Array(16);
+                crypto.getRandomValues(bytes);
+                const created = Array.from(bytes, value => value.toString(16).padStart(2, '0')).join('');
+                sessionStorage.setItem(key, created);
+                return created;
+            } catch (error) {
+                return Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+            }
         }
 
-        if (!targetUrl) {
-            btnText.innerText = 'INVALID QR CODE';
-            btn.disabled = true;
-            showInvalidTarget();
+        function parseLanTarget(rawTarget) {
+            if (typeof rawTarget !== 'string' || rawTarget.trim() === '') return null;
+            let candidate = rawTarget.trim();
+            if (!/^[a-z][a-z\d+.-]*:\/\//i.test(candidate)) candidate = 'http://' + candidate;
+            const match = /^http:\/\/(\d{1,3}(?:\.\d{1,3}){3}):(\d{1,5})\/?$/i.exec(candidate);
+            if (!match) return null;
+            const octets = match[1].split('.').map(Number);
+            if (octets.some(o => o < 0 || o > 255)) return null;
+            if (octets[0] === 0 || octets[0] === 127 || octets[0] >= 224 || (octets[0] === 169 && octets[1] === 254)) return null;
+            const port = Number(match[2]);
+            if (!Number.isInteger(port) || port < 8080 || port > 8090) return null;
+            return `http://${match[1]}:${port}`;
         }
 
-        btn.addEventListener('click', () => {
-            if (!targetUrl) {
-                showInvalidTarget();
+        // --- Landing mode (LAN QR handoff) ---
+        function initLanding() {
+            document.querySelector('.controller-container').style.display = 'none';
+            document.getElementById('orientationWarning').style.display = 'none';
+            document.getElementById('landscapeFullscreenOverlay').style.display = 'none';
+            const joinBtn = document.getElementById('joinBtn');
+            const errorEl = document.getElementById('landingError');
+            document.getElementById('landingView').style.display = 'flex';
+
+            if (!LAN_TARGET) {
+                joinBtn.textContent = 'INVALID QR CODE';
+                joinBtn.disabled = true;
+                errorEl.textContent = 'This QR code did not contain a valid game address: ' + (RAW_IP || 'missing ip parameter');
+                errorEl.style.display = 'block';
                 return;
             }
+            document.getElementById('landingTarget').textContent = LAN_TARGET;
 
-            // An HTTPS page cannot preflight an HTTP LAN server with fetch.
-            // A top-level navigation from this user gesture is permitted.
-            btnText.innerText = 'OPENING...';
-            btn.disabled = true;
+            joinBtn.addEventListener('click', () => {
+                joinBtn.textContent = 'OPENING...';
+                joinBtn.disabled = true;
+                // If the LAN page has not loaded within 3 seconds, reload into
+                // the online controller with the fallback credentials.
+                if (HAS_FALLBACK) {
+                    setTimeout(() => {
+                        location.hash = '#v=1&room=' + encodeURIComponent(FB_ROOM) + '&token=' + encodeURIComponent(FB_TOKEN);
+                        location.reload();
+                    }, 3000);
+                }
+                // An HTTPS page cannot preflight an HTTP LAN server; a
+                // top-level navigation from this user gesture is permitted.
+                window.location.assign(LAN_TARGET);
+            });
+        }
 
-            // If we have an online fallback and the LAN page hasn't loaded
-            // within 3 seconds, redirect to the online controller.
-            if (fallbackUrl) {
+        // --- Controller mode (online: relay + background P2P upgrade) ---
+        function init() {
+            hasTouch = 'ontouchstart' in window;
+            connect();
+            setupJoysticks();
+            setupButtons();
+            setupFullscreen();
+        }
+
+        function connect() {
+            if (!HAS_ONLINE_SESSION) {
+                updateConnectionStatus('invalid or expired join link', false);
+                return;
+            }
+            if (!/^wss:\/\//i.test(RELAY_URL) && !/^ws:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/i.test(RELAY_URL)) {
+                updateConnectionStatus('controller relay is not configured', false);
+                return;
+            }
+            conn = LOFConnection.create({
+                env: {
+                    WebSocket,
+                    RTCPeerConnection: window.RTCPeerConnection,
+                    RTCSessionDescription: window.RTCSessionDescription,
+                    setTimeout: (...a) => setTimeout(...a),
+                    clearTimeout: (...a) => clearTimeout(...a),
+                    setInterval: (...a) => setInterval(...a),
+                    clearInterval: (...a) => clearInterval(...a),
+                },
+                relayUrl: RELAY_URL,
+                room: ROOM,
+                token: CONTROLLER_TOKEN,
+                controllerId: getControllerId(),
+                handshake: 'c:' + name + ':' + numAxes + ':' + numButtons,
+                onEvent: handleConnectionEvent,
+            });
+            conn.connect();
+        }
+
+        function handleConnectionEvent(type, a, b) {
+            if (type === 'status') {
+                updateConnectionStatus(a, b);
+                return;
+            }
+            if (type === 'player') {
+                document.getElementById('player').textContent = a;
+                gameplayReady = true;
+                releaseAllInputs(true);
+                updateConnectionStatus('connected - Online', true);
+                return;
+            }
+            if (type === 'gameplay') {
+                gameplayReady = false;
+                document.getElementById('ping').textContent = '—';
+                releaseAllInputs(false);
+                return;
+            }
+            if (type === 'ping') {
+                document.getElementById('ping').textContent = a + 'ms';
+                return;
+            }
+            if (type === 'message') {
+                if (a.startsWith('r:')) {
+                    rumbleTime = Number(a.substring(2));
+                    if (Number.isInteger(rumbleTime) && rumbleTime >= 0 && rumbleTime <= 10000 && navigator.vibrate) navigator.vibrate(rumbleTime);
+                }
+                return;
+            }
+        }
+
+        function sendWebSocketMessage(message) {
+            const coalescedAxis = /^a:([0-3]):/.exec(message);
+            if (coalescedAxis) {
+                if (message.endsWith(':0')) {
+                    pendingAxisMessages.delete(coalescedAxis[1]);
+                    sendImmediate(message);
+                    return;
+                }
+                pendingAxisMessages.set(coalescedAxis[1], message);
+                if (!axisFlushTimer) axisFlushTimer = setTimeout(flushAxisMessages, 33);
+                return;
+            }
+            sendImmediate(message);
+        }
+
+        function sendImmediate(message) {
+            if (!conn) return;
+            conn.send(message);
+        }
+
+        function flushAxisMessages() {
+            axisFlushTimer = null;
+            if (!conn || !gameplayReady) {
+                pendingAxisMessages.clear();
+                return;
+            }
+            for (const message of pendingAxisMessages.values()) sendImmediate(message);
+            pendingAxisMessages.clear();
+        }
+
+        function setupJoysticks() {
+            const leftUpdater = createJoystick('joyDivLeft', 'joyInnerLeft', leftJoystick, (x, y) => {
+                if (x !== joyLeftX) { sendWebSocketMessage(`a:0:${x}`); }
+                if (y !== joyLeftY) { sendWebSocketMessage(`a:1:${y}`); }
+                joyLeftX = x;
+                joyLeftY = y;
+            });
+
+            const rightUpdater = createJoystick('joyDivRight', 'joyInnerRight', rightJoystick, (x, y) => {
+                if (x !== joyRightX) { sendWebSocketMessage(`a:2:${x}`); }
+                if (y !== joyRightY) { sendWebSocketMessage(`a:3:${y}`); }
+                joyRightX = x;
+                joyRightY = y;
+            });
+
+            if (hasTouch) {
+                setupGlobalTouchListeners({
+                    left: { joystick: leftJoystick, updater: leftUpdater },
+                    right: { joystick: rightJoystick, updater: rightUpdater }
+                });
+            }
+        }
+
+        function createJoystick(containerId, innerId, state, callback) {
+            const container = document.getElementById(containerId);
+            const inner = document.getElementById(innerId);
+
+            const updateVisuals = (x, y) => {
+                inner.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+            };
+
+            const reset = () => {
+                state.isActive = false;
+                state.touchId = null;
+                updateVisuals(0, 0);
+                callback(0, 0);
+            };
+
+            const handleMove = (clientX, clientY) => {
+                const rect = container.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                let deltaX = clientX - centerX;
+                let deltaY = clientY - centerY;
+                const maxDistance = rect.width / 2;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                if (distance > maxDistance) {
+                    deltaX = (deltaX / distance) * maxDistance;
+                    deltaY = (deltaY / distance) * maxDistance;
+                }
+                state.x = Math.round((deltaX / maxDistance) * 100);
+                state.y = Math.round((deltaY / maxDistance) * 100);
+                updateVisuals(deltaX, deltaY);
+                callback(state.x, state.y);
+            };
+
+            // Mouse events
+            container.addEventListener('mousedown', (e) => {
+                if (!controlsEnabled) return;
+                e.preventDefault();
+                state.isActive = true;
+                handleMove(e.clientX, e.clientY);
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (state.isActive && state.touchId === null) handleMove(e.clientX, e.clientY);
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (state.isActive && state.touchId === null) reset();
+            });
+
+            // Touch events
+            container.addEventListener('touchstart', (e) => {
+                if (!controlsEnabled) return;
+                e.preventDefault();
+                const touch = e.changedTouches[0];
+                state.touchId = touch.identifier;
+                state.isActive = true;
+                handleMove(touch.clientX, touch.clientY);
+            }, { passive: false });
+
+            return { updateVisuals, reset, handleMove, container };
+        }
+
+        function setupGlobalTouchListeners(config) {
+            document.addEventListener('touchmove', (e) => {
+                for (const touch of e.changedTouches) {
+                    for (const side of ['left', 'right']) {
+                        const { joystick, updater } = config[side];
+                        if (joystick.touchId === touch.identifier) {
+                            e.preventDefault();
+                            updater.handleMove(touch.clientX, touch.clientY);
+                        }
+                    }
+                }
+            }, { passive: false });
+
+            const endHandler = (e) => {
+                for (const touch of e.changedTouches) {
+                    for (const side of ['left', 'right']) {
+                        const { joystick, updater } = config[side];
+                        if (joystick.touchId === touch.identifier) {
+                            updater.reset();
+                        }
+                    }
+                }
+            };
+            document.addEventListener('touchend', endHandler);
+            document.addEventListener('touchcancel', endHandler);
+
+            // Re-grab a joystick if the finger slides off and back
+            document.addEventListener('touchstart', (e) => {
+                if (!controlsEnabled) return;
+                for (const touch of e.changedTouches) {
+                    for (const side of ['left', 'right']) {
+                        const { joystick, updater } = config[side];
+                        if (!joystick.isActive && isTouchInRect(touch, updater.container.getBoundingClientRect())) {
+                            joystick.touchId = touch.identifier;
+                            joystick.isActive = true;
+                            updater.handleMove(touch.clientX, touch.clientY);
+                        }
+                    }
+                }
+            }, { passive: false });
+        }
+
+        function isTouchInRect(touch, rect) {
+            return (
+                touch.clientX >= rect.left &&
+                touch.clientX <= rect.right &&
+                touch.clientY >= rect.top &&
+                touch.clientY <= rect.bottom
+            );
+        }
+
+        function setupButtons() {
+            const refreshButton = document.getElementById('refreshButton');
+            const refreshHandler = (event) => {
+                if (!controlsEnabled) return;
+                event.preventDefault();
+                refreshButton.classList.add('pressed');
+
+                stopRequested = true;
+                releaseAllInputs(true);
+                if (conn) conn.stop();
+
                 setTimeout(() => {
-                    window.location.replace(fallbackUrl);
-                }, 3000);
+                    location.reload();
+                }, 100);
+            };
+
+            if (refreshButton) {
+                refreshButton.addEventListener('mousedown', refreshHandler);
+                refreshButton.addEventListener('touchstart', refreshHandler, { passive: false });
             }
 
-            window.location.assign(targetUrl);
+            document.querySelectorAll('.face-button, .option-button:not(#refreshButton)').forEach(button => {
+                const pressHandler = (event) => {
+                    if (!controlsEnabled) return;
+
+                    // Add a small vibration for haptic feedback on button press
+                    if (navigator.vibrate) {
+                        navigator.vibrate(20); // 20ms vibration
+                    }
+
+                    event.preventDefault();
+                    event.stopPropagation();
+                    button.classList.add('pressed');
+
+                    const buttonId = button.dataset.button;
+                    const triggerId = button.dataset.trigger;
+                    if (buttonId) {
+                        sendWebSocketMessage('bd:' + buttonId);
+                    } else if (triggerId) {
+                        sendWebSocketMessage('a:' + triggerId + ':100');
+                    }
+                };
+
+                const releaseHandler = (event) => {
+                    if (!controlsEnabled || !button.classList.contains('pressed')) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    button.classList.remove('pressed');
+
+                    const buttonId = button.dataset.button;
+                    const triggerId = button.dataset.trigger;
+                    if (buttonId) {
+                        sendWebSocketMessage('bu:' + buttonId);
+                    } else if (triggerId) {
+                        sendWebSocketMessage('a:' + triggerId + ':0');
+                    }
+                };
+
+                button.addEventListener('touchstart', pressHandler, { passive: false });
+                button.addEventListener('touchend', releaseHandler, { passive: false });
+                button.addEventListener('touchcancel', releaseHandler, { passive: false });
+
+                button.addEventListener('mousedown', pressHandler);
+                button.addEventListener('mouseup', releaseHandler);
+                button.addEventListener('mouseleave', releaseHandler);
+            });
+        }
+
+        function setupFullscreen() {
+            const fullscreenButton = document.getElementById('fullscreenButton');
+            const landscapeFullscreenOverlay = document.getElementById('landscapeFullscreenOverlay');
+            const landscapeFullscreenBtn = document.getElementById('landscapeFullscreenBtn');
+            const fullscreenWarning = document.getElementById('fullscreenWarning');
+            const closeWarningBtn = document.getElementById('closeFullscreenWarning');
+            const iosInstallModal = document.getElementById('iosInstallModal');
+            const closeIosInstallBtn = document.getElementById('closeIosInstallModal');
+
+
+            const enableControls = () => {
+                if(controlsEnabled) return;
+                controlsEnabled = true;
+                landscapeFullscreenOverlay.classList.remove('show');
+            };
+
+            closeIosInstallBtn.addEventListener('click', () => {
+                iosInstallModal.style.display = 'none';
+                enableControls();
+            });
+
+            function showFullscreenWarning() {
+                fullscreenWarning.style.display = 'flex';
+                fullscreenButton.style.display = 'none';
+                landscapeFullscreenOverlay.classList.remove('show');
+            }
+
+            closeWarningBtn.addEventListener('click', () => {
+                fullscreenWarning.style.display = 'none';
+                enableControls();
+            });
+
+            function toggleFullscreen() {
+                enableControls();
+
+                // --- iOS Handling ---
+                if (isIOS && !isInStandaloneMode) {
+                    iosInstallModal.style.display = 'flex';
+                    return;
+                }
+                // --- End iOS Handling ---
+
+                const requestFullscreen =
+                    document.documentElement.requestFullscreen ||
+                    document.documentElement.webkitRequestFullscreen ||
+                    document.documentElement.mozRequestFullScreen ||
+                    document.documentElement.msRequestFullscreen;
+
+                if (!requestFullscreen) {
+                    showFullscreenWarning();
+                    return;
+                }
+
+                if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+                    const result = requestFullscreen.call(document.documentElement);
+                    if (result && result.catch) result.catch(showFullscreenWarning);
+                } else {
+                    const exitFullscreen =
+                        document.exitFullscreen ||
+                        document.webkitExitFullscreen ||
+                        document.mozCancelFullScreen ||
+                        document.msExitFullscreen;
+
+                    if (exitFullscreen) {
+                        const result = exitFullscreen.call(document);
+                        if (result && result.catch) result.catch(() => {});
+                    }
+                }
+            }
+
+            fullscreenButton.addEventListener('click', toggleFullscreen);
+            landscapeFullscreenBtn.addEventListener('click', toggleFullscreen);
+        }
+
+        function releaseAllInputs(sendNeutral) {
+            clearTimeout(axisFlushTimer);
+            axisFlushTimer = null;
+            pendingAxisMessages.clear();
+            leftJoystick.isActive = false;
+            leftJoystick.touchId = null;
+            document.getElementById('joyInnerLeft').style.transform = 'translate(-50%, -50%)';
+            joyLeftX = 0;
+            joyLeftY = 0;
+
+            rightJoystick.isActive = false;
+            rightJoystick.touchId = null;
+            document.getElementById('joyInnerRight').style.transform = 'translate(-50%, -50%)';
+            joyRightX = 0;
+            joyRightY = 0;
+
+            if (sendNeutral && gameplayReady && conn && conn.isSocketOpen()) {
+                for (let axis = 0; axis < 6; axis++) conn.send('a:' + axis + ':0');
+                document.querySelectorAll('[data-button].pressed').forEach(button => conn.send('bu:' + button.dataset.button));
+            }
+            document.querySelectorAll('.pressed').forEach(element => element.classList.remove('pressed'));
+        }
+
+        function updateConnectionStatus(status, isConnected) {
+            const connectionElement = document.getElementById('connection');
+            connectionElement.textContent = status;
+            connectionElement.className = isConnected ? 'status-connected' : 'status-disconnected';
+        }
+
+        function checkOrientation() {
+            const orientationWarning = document.getElementById('orientationWarning');
+            const landscapeFullscreenOverlay = document.getElementById('landscapeFullscreenOverlay');
+            const isPortrait = window.innerHeight > window.innerWidth;
+            const isMobile = window.innerWidth < 1200 || ('ontouchstart' in window);
+            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement ||
+                                 document.mozFullScreenElement || document.msFullscreenElement;
+
+            if (isPortrait && isMobile) {
+                orientationWarning.classList.add('show');
+                landscapeFullscreenOverlay.classList.remove('show');
+            } else if (!isPortrait && isMobile && !isFullscreen && !controlsEnabled && !isIOS) {
+                // For non-iOS devices, show the fullscreen button overlay
+                orientationWarning.classList.remove('show');
+                landscapeFullscreenOverlay.classList.add('show');
+            } else {
+                orientationWarning.classList.remove('show');
+                landscapeFullscreenOverlay.classList.remove('show');
+                if(!controlsEnabled && !isPortrait) {
+                    // if it's not prompting for fullscreen, enable controls
+                    controlsEnabled = true;
+                }
+            }
+        }
+
+        window.addEventListener('orientationchange', () => {
+            setTimeout(checkOrientation, 100);
         });
 
-        closeBtn.addEventListener('click', () => {
-            popup.classList.add('hidden');
-        });
-        
-        popup.addEventListener('click', (e) => {
-            if (e.target === popup) {
-                popup.classList.add('hidden');
+        window.addEventListener('resize', checkOrientation);
+
+        const onFullscreenChange = () => {
+            controlsEnabled = true;
+            checkOrientation();
+            adjustFullscreenPositioning();
+        };
+        document.addEventListener('fullscreenchange', onFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+        document.addEventListener('mozfullscreenchange', onFullscreenChange);
+        document.addEventListener('MSFullscreenChange', onFullscreenChange);
+
+        function adjustFullscreenPositioning() {
+            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement ||
+                                 document.mozFullScreenElement || document.msFullscreenElement;
+
+            const rightJoystick = document.querySelector('.joystick-right');
+            const faceButtonsContainer = document.querySelector('.face-buttons-container');
+            const fullscreenButton = document.getElementById('fullscreenButton');
+
+            if (isFullscreen) {
+                rightJoystick.style.right = '15dvw';
+                faceButtonsContainer.style.right = '15dvw';
+                if (fullscreenButton) fullscreenButton.style.right = '15dvw';
+            } else {
+                rightJoystick.style.right = '';
+                faceButtonsContainer.style.right = '';
+                if (fullscreenButton) fullscreenButton.style.right = '';
             }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) releaseAllInputs(true);
+            else if (conn && !conn.isSocketOpen()) conn.connect();
+        });
+        window.addEventListener('blur', () => releaseAllInputs(true));
+        window.addEventListener('offline', () => {
+            releaseAllInputs(true);
+            updateConnectionStatus('offline', false);
+        });
+        window.addEventListener('online', () => {
+            if (conn && !conn.isSocketOpen()) conn.connect();
+        });
+        window.addEventListener('pagehide', () => {
+            stopRequested = true;
+            releaseAllInputs(true);
+            if (conn) conn.stop();
+        });
+        window.addEventListener('pageshow', () => {
+            if (!stopRequested) return;
+            // connection.js stop() is terminal; restart from a clean page.
+            location.reload();
+        });
+
+        window.addEventListener('load', () => {
+             // If the app is launched from the Home Screen on iOS, it's already "fullscreen".
+            if (isIOS && isInStandaloneMode) {
+                document.getElementById('fullscreenButton').style.display = 'none';
+                controlsEnabled = true; // Automatically enable controls.
+            }
+
+            if (RAW_IP !== null) {
+                // LAN QR handoff: show the JOIN landing instead of the controller.
+                initLanding();
+                return;
+            }
+            init();
+            checkOrientation();
+            adjustFullscreenPositioning();
         });
     </script>
 </body>
