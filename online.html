@@ -2,15 +2,1339 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=./">
-    <title>Leap of Faith Controller</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Mobile Game Controller</title>
+
+    <!-- PWA Meta Tags for iOS Fullscreen Experience -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Game Controller">
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --joystick-size: 200px;
+            --joystick-margin: 15px;
+            --joystick-knob: 85px;
+            --face-size: 100px;
+            --face-cluster: 180px;
+            --face-gap: 10px;
+            --arc-clearance: calc(0.8 * var(--face-size));
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+            height: 100vh;
+            height: 100dvh;
+            width: 100vw;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            box-sizing: border-box;
+        }
+
+        :fullscreen body,
+        :-webkit-full-screen body,
+        :-moz-full-screen body,
+        :-ms-fullscreen body {
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .controller-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        :fullscreen .controller-container,
+        :-webkit-full-screen .controller-container,
+        :-moz-full-screen .controller-container,
+        :-ms-fullscreen .controller-container {
+            height: 100vh;
+            width: 100vw;
+        }
+
+        :fullscreen *,
+        :-webkit-full-screen *,
+        :-moz-full-screen *,
+        :-ms-fullscreen * {
+            max-width: 100vw;
+            max-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .status-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            transform: none;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-bar table {
+            border-collapse: collapse;
+        }
+
+        .status-bar td {
+            padding: 2px 8px;
+        }
+
+        .fullscreen-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .fullscreen-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .joystick-container {
+            position: absolute;
+            width: var(--joystick-size);
+            height: var(--joystick-size);
+            bottom: calc(var(--joystick-margin) + 20px);
+            z-index: 1;
+            pointer-events: auto;
+        }
+
+        .joystick-left {
+            left: calc(var(--joystick-margin) + 40px);
+            bottom: calc(var(--joystick-margin) + 40px);
+        }
+
+        .joystick-right {
+            right: calc(var(--joystick-margin) + 40px);
+            bottom: calc(var(--joystick-margin) + 40px);
+        }
+
+        .joystick-outer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            pointer-events: none;
+        }
+
+        .joystick-inner {
+            position: absolute;
+            width: var(--joystick-knob);
+            height: var(--joystick-knob);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s ease;
+            pointer-events: none;
+        }
+
+        .joystick-left .joystick-inner {
+            background: linear-gradient(145deg, #ff6b6b, #ee5a52);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .joystick-right .joystick-inner {
+            background: linear-gradient(145deg, #4ecdc4, #44a08d);
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+        }
+
+        .face-buttons-container, .face-buttons-container-left {
+            position: absolute;
+            bottom: calc(var(--joystick-margin) + 40px);
+            width: var(--joystick-size);
+            height: var(--joystick-size);
+            pointer-events: none;
+            z-index: 2;
+        }
+        .face-buttons-container-left {
+            left: calc(var(--joystick-margin) + 40px);
+        }
+        .face-buttons-container {
+            right: calc(var(--joystick-margin) + 40px);
+        }
+
+        .face-button {
+            position: absolute;
+            pointer-events: auto;
+            width: var(--face-size);
+            height: var(--face-size);
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            font-weight: bold;
+            font-size: 20px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            transition: transform 0.1s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .face-button.pressed,
+        .face-button:active {
+            transform: translate(-50%, -50%) scale(0.95);
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.6);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .face-button:hover:not(:active) {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .button-a {
+            background: linear-gradient(145deg, #ff6b6b, #ee5a52);
+            border-color: rgba(255, 107, 107, 0.6);
+            top: calc(50% - 115px);
+            left: calc(50% - 115px);
+            transform: translate(-50%, -50%);
+            width: calc(var(--face-size) * 1.2);
+            height: calc(var(--face-size) * 1.2);
+        }
+
+        .button-b {
+            background: linear-gradient(145deg, #4ecdc4, #44a08d);
+            border-color: rgba(78, 205, 196, 0.6);
+            top: calc(50% - 150px);
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(var(--face-size) * 1.2);
+            height: calc(var(--face-size) * 1.2);
+        }
+
+        .button-y {
+            background: linear-gradient(145deg, #f9ca24, #f0932b);
+            border-color: rgba(249, 202, 36, 0.6);
+            top: calc(50% - 150px);
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .button-lt {
+            background: linear-gradient(145deg, #fd79a8, #fdcb6e);
+            border-color: rgba(253, 121, 168, 0.6);
+            top: 50%;
+            left: calc(50% + 150px);
+            transform: translate(-50%, -50%);
+            width: calc(var(--face-size) * 1.8);
+            height: calc(var(--face-size) * 1.8);
+            border-radius: 25px;
+        }
+
+        .button-lt .icon-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .button-lt .material-symbols-rounded,
+        .button-lb .material-symbols-rounded {
+            font-size: calc(var(--face-size) * 0.9);
+        }
+
+        .button-lt .button-text {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .button-lb {
+            background: linear-gradient(145deg, #fd79a8, #fdcb6e);
+            border-color: rgba(253, 121, 168, 0.6);
+            top: 50%;
+            left: calc(50% - 150px);
+            transform: translate(-50%, -50%);
+            width: calc(var(--face-size) * 1.8);
+            height: calc(var(--face-size) * 1.8);
+            border-radius: 25px;
+            }
+
+            .button-lb .icon-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                height: 100%;
+            }
+
+
+            .button-lb .button-text {
+                font-size: 20px;
+                font-weight: bold;
+                margin-top: 5px;
+            }
+
+        .option-buttons {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+        }
+
+        .option-button {
+            width: 100px;
+            height: 40px;
+            background: linear-gradient(145deg, #6c5ce7, #a29bfe);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+        }
+
+        .option-button:active {
+            transform: scale(0.95);
+        }
+
+        @media (orientation: landscape) and (max-height: 500px) {
+            :root {
+                --joystick-size: 170px;
+                --joystick-knob: 70px;
+                --face-size: 60px;
+            }
+
+            .joystick-left {
+                left: calc(var(--joystick-margin) + 20px);
+            }
+            .joystick-right {
+                right: calc(var(--joystick-margin) + 20px);
+            }
+            .face-buttons-container-left {
+                left: calc(var(--joystick-margin) + 20px);
+            }
+            .face-buttons-container {
+                right: calc(var(--joystick-margin) + 20px);
+            }
+
+            .button-a {
+                left: calc(50% - 100px);
+                top: calc(50% - 100px);
+            }
+            .button-b, .button-y {
+                top: calc(50% - 130px);
+            }
+            .button-lt {
+                top: 50%;
+                left: calc(50% + 150px);
+            }
+            .button-lb {
+                top: 50%;
+                left: calc(50% - 150px);
+            }
+
+            .button-lt .material-symbols-rounded {
+                font-size: calc(var(--face-size) * 0.9);
+            }
+
+            .button-lt .button-text {
+                font-size: 14px;
+            }
+
+            .option-buttons {
+                top: 15px;
+            }
+        }
+
+        .pressed {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        .status-connected { color: #00ff88; }
+        .status-disconnected { color: #ff6b6b; }
+        .orientation-warning { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.9); color: white; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; font-size: 24px; text-align: center; padding: 20px; }
+        .orientation-warning.show { display: flex; }
+        .orientation-icon { font-size: 60px; margin-bottom: 20px; }
+        .orientation-text { margin-bottom: 10px; }
+        .orientation-subtext { font-size: 16px; opacity: 0.8; }
+
+        .landscape-fullscreen-btn {
+            width: 200px;
+            height: 80px;
+            background: linear-gradient(145deg, #6c5ce7, #a29bfe);
+            border: none;
+            border-radius: 40px;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.6);
+            transition: all 0.3s ease;
+        }
+
+        .landscape-fullscreen-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 35px rgba(108, 92, 231, 0.8);
+        }
+
+        .landscape-fullscreen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.3);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+
+        .landscape-fullscreen-overlay.show {
+            display: flex;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10001;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: #2c3e50;
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 15px;
+            color: #e74c3c;
+        }
+
+        /* iOS Install Modal Specific Styles */
+        #iosInstallModal .modal-content h2 {
+             color: #3498db;
+        }
+
+        #iosInstallModal .modal-content p {
+            margin-bottom: 15px;
+        }
+
+        #iosInstallModal .share-icon {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            background-color: #3498db;
+            -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18,16.08c-0.76,0-1.44,0.3-1.96,0.77L8.91,12.7c0.05-0.23,0.09-0.46,0.09-0.7s-0.04-0.47-0.09-0.7l7.05-4.11c0.54,0.5,1.25,0.81,2.04,0.81c1.66,0,3-1.34,3-3s-1.34-3-3-3s-3,1.34-3,3c0,0.24,0.04,0.47,0.09,0.7L8.04,9.81C7.5,9.31,6.79,9,6,9c-1.66,0-3,1.34-3,3s1.34,3,3,3c0.79,0,1.5-0.31,2.04-0.81l7.12,4.16c-0.05,0.21-0.08,0.43-0.08,0.65c0,1.66,1.34,3,3,3s3-1.34,3-3S19.66,16.08,18,16.08z"/></svg>') center center no-repeat;
+            mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18,16.08c-0.76,0-1.44,0.3-1.96,0.77L8.91,12.7c0.05-0.23,0.09-0.46,0.09-0.7s-0.04-0.47-0.09-0.7l7.05-4.11c0.54,0.5,1.25,0.81,2.04,0.81c1.66,0,3-1.34,3-3s-1.34-3-3-3s-3,1.34-3,3c0,0.24,0.04,0.47,0.09,0.7L8.04,9.81C7.5,9.31,6.79,9,6,9c-1.66,0-3,1.34-3,3s1.34,3,3,3c0.79,0,1.5-0.31,2.04-0.81l7.12,4.16c-0.05,0.21-0.08,0.43-0.08,0.65c0,1.66,1.34,3,3,3s3-1.34,3-3S19.66,16.08,18,16.08z"/></svg>') center center no-repeat;
+            vertical-align: middle;
+            margin: 0 4px;
+        }
+
+
+        .modal-content p {
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .modal-content button {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 8px;
+            background: #3498db;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .modal-content button:hover {
+            background: #2980b9;
+        }
+    </style>
 </head>
 <body>
-    <!-- Legacy entry point: the unified controller lives at the site root.
-         The fragment carries the join credentials, so keep it in the redirect. -->
+    <div class="orientation-warning" id="orientationWarning">
+        <div class="orientation-icon">📱</div>
+        <div class="orientation-text">Please Rotate to Landscape</div>
+        <div class="orientation-subtext">This controller works best in landscape orientation</div>
+    </div>
+
+    <div class="landscape-fullscreen-overlay" id="landscapeFullscreenOverlay">
+        <button class="landscape-fullscreen-btn" id="landscapeFullscreenBtn">⛶ Full Screen</button>
+    </div>
+
+    <div class="controller-container">
+        <div class="status-bar">
+            <table>
+                <tr>
+                    <td>Status:</td>
+                    <td id="connection" class="status-disconnected">disconnected</td>
+                </tr>
+                <tr>
+                    <td>Player:</td>
+                    <td id="player">null</td>
+                </tr>
+                <tr>
+                    <td>Ping:</td>
+                    <td id="ping">—</td>
+                </tr>
+            </table>
+        </div>
+
+        <button class="fullscreen-btn" id="fullscreenButton">⛶</button>
+
+        <div class="joystick-container joystick-left" id="joyDivLeft">
+            <div class="joystick-outer"></div>
+            <div class="joystick-inner" id="joyInnerLeft"></div>
+        </div>
+
+        <div class="joystick-container joystick-right" id="joyDivRight">
+            <div class="joystick-outer"></div>
+            <div class="joystick-inner" id="joyInnerRight"></div>
+        </div>
+
+        <div class="face-buttons-container-left">
+            <button class="face-button button-b" data-button="1">B</button>
+            <button class="face-button button-lt" data-trigger="5">
+                <div class="icon-container">
+                    <span class="material-symbols-rounded">explosion</span>
+                    <span class="button-text">FIRE</span>
+                </div>
+            </button>
+        </div>
+
+        <div class="face-buttons-container">
+            <button class="face-button button-a" data-button="0">A</button>
+            <button class="face-button button-y" data-button="3">Y</button>
+            <button class="face-button button-lb" data-trigger="4">
+                <div class="icon-container">
+                    <span class="material-symbols-rounded">cookie</span>
+                    <span class="button-text">GRAB</span>
+                </div>
+            </button>
+        </div>
+
+        <div class="option-buttons">
+            <button class="option-button" id="refreshButton">REFRESH</button>
+            <button class="option-button" data-button="6">START</button>
+        </div>
+    </div>
+
+    <div id="fullscreenWarning" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2>Fullscreen Not Supported</h2>
+            <p>Your browser does not support or allow fullscreen mode. This feature may be blocked by your settings or be unavailable in this context (e.g., inside an iframe).</p>
+            <button id="closeFullscreenWarning">OK</button>
+        </div>
+    </div>
+
+    <!-- New Modal for iOS "Add to Home Screen" instructions -->
+    <div id="iosInstallModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2>Fullscreen Experience</h2>
+            <p>For the best experience, add this controller to your Home Screen.</p>
+            <p>Tap the <span class="share-icon"></span> Share button and then select <strong>'Add to Home Screen'</strong>.</p>
+            <button id="closeIosInstallModal">OK</button>
+        </div>
+    </div>
+
+
+    <script src="config.js"></script>
     <script>
-        location.replace('./' + location.hash);
+        // Session credentials stay in the fragment so the static web host never
+        // receives them in its request logs or referrer headers.
+        const RELAY_URL = window.LOF_RELAY_URL || '';
+        const SESSION = new URLSearchParams(location.hash.slice(1));
+        const ROOM = (SESSION.get('room') || '').toUpperCase();
+        const CONTROLLER_TOKEN = SESSION.get('token') || '';
+        const SESSION_VERSION = SESSION.get('v') || '';
+        const CONTROLLER_ID = getControllerId();
+        let websocket = null;
+        let socketGeneration = 0;
+        let reconnectAttempt = 0;
+        let reconnectTimer = null;
+        let gameplayReady = false;
+        let stopRequested = false;
+        const pendingAxisMessages = new Map();
+        let axisFlushTimer = null;
+        let deviceID = -1;
+        let name = 'Mobile Controller';
+        let numAxes = 6;
+        let numButtons = 8;
+        let hasTouch = false;
+        let joyLeftX = 0;
+        let joyLeftY = 0;
+        let joyRightX = 0;
+        let joyRightY = 0;
+        let rumbleTime = -1;
+        let controlsEnabled = false;
+
+        // --- Start of iOS Detection ---
+        const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !window.MSStream;
+        const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator.standalone);
+        // --- End of iOS Detection ---
+
+        let leftJoystick = { x: 0, y: 0, isActive: false, touchId: null, lastUpdate: 0 };
+        let rightJoystick = { x: 0, y: 0, isActive: false, touchId: null, lastUpdate: 0 };
+
+        function getControllerId() {
+            const key = 'lof-controller-id-' + ROOM;
+            try {
+                const existing = sessionStorage.getItem(key);
+                if (/^[a-f0-9]{32}$/i.test(existing || '')) return existing;
+                const bytes = new Uint8Array(16);
+                crypto.getRandomValues(bytes);
+                const created = Array.from(bytes, value => value.toString(16).padStart(2, '0')).join('');
+                sessionStorage.setItem(key, created);
+                return created;
+            } catch (error) {
+                return Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+            }
+        }
+
+        function init() {
+            hasTouch = 'ontouchstart' in window;
+            connectWebSocket();
+            setupJoysticks();
+            setupButtons();
+            setupFullscreen();
+        }
+
+        function setupJoysticks() {
+            const leftUpdater = createJoystick('joyDivLeft', 'joyInnerLeft', leftJoystick, (x, y) => {
+                if (x !== joyLeftX) { sendWebSocketMessage(`a:0:${x}`); }
+                if (y !== joyLeftY) { sendWebSocketMessage(`a:1:${y}`); }
+                joyLeftX = x;
+                joyLeftY = y;
+            });
+
+            const rightUpdater = createJoystick('joyDivRight', 'joyInnerRight', rightJoystick, (x, y) => {
+                if (x !== joyRightX) { sendWebSocketMessage(`a:2:${x}`); }
+                if (y !== joyRightY) { sendWebSocketMessage(`a:3:${y}`); }
+                joyRightX = x;
+                joyRightY = y;
+            });
+
+            if (hasTouch) {
+                setupGlobalTouchListeners({
+                    left: { joystick: leftJoystick, updater: leftUpdater },
+                    right: { joystick: rightJoystick, updater: rightUpdater }
+                });
+            }
+        }
+
+        function createJoystick(containerId, innerId, state, callback) {
+            const container = document.getElementById(containerId);
+            const inner = document.getElementById(innerId);
+
+            const updateVisuals = (x, y) => {
+                inner.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+            };
+
+            const reset = () => {
+                state.x = 0;
+                state.y = 0;
+                updateVisuals(0, 0);
+                callback(0, 0);
+            };
+
+            const update = (clientX, clientY) => {
+                const rect = container.getBoundingClientRect();
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const maxDistance = centerX - (inner.offsetWidth / 2);
+
+                let x = clientX - rect.left - centerX;
+                let y = clientY - rect.top - centerY;
+
+                const distance = Math.sqrt(x * x + y * y);
+
+                if (distance > maxDistance) {
+                    const angle = Math.atan2(y, x);
+                    x = Math.cos(angle) * maxDistance;
+                    y = Math.sin(angle) * maxDistance;
+                }
+
+                state.x = x;
+                state.y = y;
+                state.lastUpdate = Date.now();
+
+                updateVisuals(x, y);
+
+                const normalizedX = Math.round((x / maxDistance) * 100);
+                const normalizedY = Math.round((y / maxDistance) * 100);
+
+                callback(normalizedX, normalizedY);
+            };
+
+            if (!hasTouch) {
+                const onMouseDown = (e) => {
+                    if (!controlsEnabled) return;
+                    e.preventDefault();
+                    state.isActive = true;
+                    update(e.clientX, e.clientY);
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                };
+
+                const onMouseMove = (e) => {
+                    if (state.isActive) {
+                        update(e.clientX, e.clientY);
+                    }
+                };
+
+                const onMouseUp = () => {
+                    state.isActive = false;
+                    reset();
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                };
+
+                container.addEventListener('mousedown', onMouseDown);
+            }
+
+            return { update, reset };
+        }
+
+        function setupGlobalTouchListeners(joysticks) {
+            const { left, right } = joysticks;
+
+            document.body.addEventListener('touchstart', (e) => {
+                // Allow modal overlay interaction even if controls are disabled
+                for (const touch of e.changedTouches) {
+                    const target = touch.target;
+                    if (target.closest('.modal-overlay')) {
+                        // Let modal overlay handle its own events
+                        return;
+                    }
+                }
+                if (!controlsEnabled) return;
+
+                for (const touch of e.changedTouches) {
+                    const target = touch.target;
+                    if (target.closest('.face-button, .option-button, .fullscreen-btn')) {
+                        continue;
+                    }
+
+                    e.preventDefault();
+
+                    const leftRect = document.getElementById('joyDivLeft').getBoundingClientRect();
+                    const rightRect = document.getElementById('joyDivRight').getBoundingClientRect();
+
+                    if (isTouchInRect(touch, leftRect) && !left.joystick.isActive) {
+                        left.joystick.isActive = true;
+                        left.joystick.touchId = touch.identifier;
+                        left.updater.update(touch.clientX, touch.clientY);
+                    } else if (isTouchInRect(touch, rightRect) && !right.joystick.isActive) {
+                        right.joystick.isActive = true;
+                        right.joystick.touchId = touch.identifier;
+                        right.updater.update(touch.clientX, touch.clientY);
+                    }
+                }
+            }, { passive: false });
+
+            document.body.addEventListener('touchmove', (e) => {
+                if (!controlsEnabled) return;
+                e.preventDefault();
+                for (const touch of e.changedTouches) {
+                    if (left.joystick.isActive && left.joystick.touchId === touch.identifier) {
+                        left.updater.update(touch.clientX, touch.clientY);
+                    } else if (right.joystick.isActive && right.joystick.touchId === touch.identifier) {
+                        right.updater.update(touch.clientX, touch.clientY);
+                    }
+                }
+            }, { passive: false });
+
+            const onTouchEnd = (e) => {
+                if (!controlsEnabled) return;
+                for (const touch of e.changedTouches) {
+                    if (left.joystick.isActive && left.joystick.touchId === touch.identifier) {
+                        left.joystick.isActive = false;
+                        left.joystick.touchId = null;
+                        left.updater.reset();
+                    } else if (right.joystick.isActive && right.joystick.touchId === touch.identifier) {
+                        right.joystick.isActive = false;
+                        right.joystick.touchId = null;
+                        right.updater.reset();
+                    }
+                }
+            };
+
+            document.body.addEventListener('touchend', onTouchEnd);
+            document.body.addEventListener('touchcancel', onTouchEnd);
+        }
+
+        function isTouchInRect(touch, rect) {
+            return (
+                touch.clientX >= rect.left &&
+                touch.clientX <= rect.right &&
+                touch.clientY >= rect.top &&
+                touch.clientY <= rect.bottom
+            );
+        }
+
+        function sendWebSocketMessage(message) {
+            const coalescedAxis = /^a:([0-3]):/.exec(message);
+            if (coalescedAxis) {
+                if (message.endsWith(':0')) {
+                    pendingAxisMessages.delete(coalescedAxis[1]);
+                    sendImmediate(message);
+                    return;
+                }
+                pendingAxisMessages.set(coalescedAxis[1], message);
+                if (!axisFlushTimer) axisFlushTimer = setTimeout(flushAxisMessages, 33);
+                return;
+            }
+            sendImmediate(message);
+        }
+
+        function sendImmediate(message) {
+            if (p2pReady && rtcDc && rtcDc.readyState === 'open') {
+                try { rtcDc.send(message); return; } catch {}
+            }
+            if (!gameplayReady || !websocket || websocket.readyState !== WebSocket.OPEN) return;
+            try {
+                websocket.send(message);
+            } catch (error) {
+                console.warn('WebSocket send error:', error);
+                updateConnectionStatus('error', false);
+            }
+        }
+
+        let pingIntervalId = null;
+        function startPingInterval() {
+            if (pingIntervalId) return;
+            pingIntervalId = setInterval(() => {
+                sendImmediate('c:ping:' + Date.now());
+            }, 2000);
+        }
+        function stopPingInterval() {
+            if (pingIntervalId) { clearInterval(pingIntervalId); pingIntervalId = null; }
+            document.getElementById('ping').textContent = '—';
+        }
+
+        // --- WebRTC P2P ---
+        let rtcPc = null;
+        let rtcDc = null;
+        let p2pReady = false;
+        let rtcTimer = null;
+
+        function tryWebRTC() {
+            try {
+                rtcPc = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                    ]
+                });
+                rtcDc = rtcPc.createDataChannel('input', { ordered: false, maxRetransmits: 0 });
+
+                rtcPc.onicecandidate = (e) => {
+                    if (e.candidate && e.candidate.candidate) {
+                        try { websocket.send(JSON.stringify({ v:1, type:'rtc_ice', candidate:e.candidate.candidate, mid:e.candidate.sdpMid || '0' })); } catch {}
+                    }
+                };
+
+                rtcDc.onopen = () => {
+                    p2pReady = true;
+                    clearTimeout(rtcTimer);
+                    updateConnectionStatus('connected - P2P', true);
+                };
+                rtcDc.onclose = () => {
+                    p2pReady = false;
+                    if (gameplayReady) updateConnectionStatus('connected - Online', true);
+                };
+                rtcDc.onmessage = (e) => { handleMessage(e.data); };
+
+                rtcPc.createOffer()
+                    .then(offer => rtcPc.setLocalDescription(offer).then(() => offer))
+                    .then(offer => {
+                        try { websocket.send(JSON.stringify({ v:1, type:'rtc_offer', sdp:{ type:offer.type, sdp:offer.sdp } })); } catch {}
+                    })
+                    .catch(() => {});
+
+                rtcTimer = setTimeout(() => { if (!p2pReady) { console.log('WebRTC timeout — staying on relay'); cleanupWebRTC(); } }, 10000);
+            } catch { cleanupWebRTC(); }
+        }
+
+        function cleanupWebRTC() {
+            clearTimeout(rtcTimer);
+            try { if (rtcDc) rtcDc.close(); } catch {}
+            try { if (rtcPc) rtcPc.close(); } catch {}
+            rtcPc = null; rtcDc = null; p2pReady = false;
+        }
+
+        function handleRtcSignaling(envelope) {
+            if (envelope.type === 'rtc_answer' && rtcPc) {
+                try { rtcPc.setRemoteDescription(new RTCSessionDescription(envelope.sdp)); } catch {}
+                return true;
+            }
+            if (envelope.type === 'rtc_ice' && rtcPc) {
+                try { rtcPc.addIceCandidate({ candidate: envelope.candidate, sdpMid: envelope.mid || '0' }); } catch {}
+                return true;
+            }
+            return false;
+        }
+
+        function handleMessage(message) {
+            if (message.startsWith('c:pong:')) {
+                const sentTime = Number(message.substring(7));
+                if (sentTime > 0) {
+                    document.getElementById('ping').textContent = (Date.now() - sentTime) + 'ms';
+                }
+                return;
+            }
+            if (message.startsWith('c:')) {
+                const player = message.substring(2);
+                if (!/^\d{1,3}$/.test(player)) return;
+                document.getElementById('player').textContent = player;
+                gameplayReady = true;
+                reconnectAttempt = 0;
+                releaseAllInputs(true);
+                updateConnectionStatus('connected - Online', true);
+                startPingInterval();
+                tryWebRTC();
+                return;
+            }
+            if (message.startsWith('r:')) {
+                rumbleTime = Number(message.substring(2));
+                if (Number.isInteger(rumbleTime) && rumbleTime >= 0 && rumbleTime <= 10000 && navigator.vibrate) navigator.vibrate(rumbleTime);
+                return;
+            }
+        }
+
+        function flushAxisMessages() {
+            axisFlushTimer = null;
+            if (!gameplayReady || !websocket || websocket.readyState !== WebSocket.OPEN || websocket.bufferedAmount > 16384) {
+                pendingAxisMessages.clear();
+                return;
+            }
+            for (const message of pendingAxisMessages.values()) sendImmediate(message);
+            pendingAxisMessages.clear();
+        }
+
+        function setupButtons() {
+            const refreshButton = document.getElementById('refreshButton');
+            const refreshHandler = (event) => {
+                if (!controlsEnabled) return;
+                event.preventDefault();
+                refreshButton.classList.add('pressed');
+
+                stopRequested = true;
+                releaseAllInputs(true);
+                if (websocket && websocket.readyState === WebSocket.OPEN) websocket.close(1000, 'refresh');
+
+                setTimeout(() => {
+                    location.reload();
+                }, 100);
+            };
+
+            if (refreshButton) {
+                refreshButton.addEventListener('mousedown', refreshHandler);
+                refreshButton.addEventListener('touchstart', refreshHandler, { passive: false });
+            }
+
+            document.querySelectorAll('.face-button, .option-button:not(#refreshButton)').forEach(button => {
+                const pressHandler = (event) => {
+                    if (!controlsEnabled) return;
+
+                    // Add a small vibration for haptic feedback on button press
+                    if (navigator.vibrate) {
+                        navigator.vibrate(20); // 20ms vibration
+                    }
+
+                    event.preventDefault();
+                    event.stopPropagation();
+                    button.classList.add('pressed');
+
+                    const buttonId = button.dataset.button;
+                    const triggerId = button.dataset.trigger;
+                    if (buttonId) {
+                        sendWebSocketMessage('bd:' + buttonId);
+                    } else if (triggerId) {
+                        sendWebSocketMessage('a:' + triggerId + ':100');
+                    }
+                };
+
+                const releaseHandler = (event) => {
+                    if (!controlsEnabled || !button.classList.contains('pressed')) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    button.classList.remove('pressed');
+
+                    const buttonId = button.dataset.button;
+                    const triggerId = button.dataset.trigger;
+                    if (buttonId) {
+                        sendWebSocketMessage('bu:' + buttonId);
+                    } else if (triggerId) {
+                        sendWebSocketMessage('a:' + triggerId + ':0');
+                    }
+                };
+
+                button.addEventListener('touchstart', pressHandler, { passive: false });
+                button.addEventListener('touchend', releaseHandler, { passive: false });
+                button.addEventListener('touchcancel', releaseHandler, { passive: false });
+
+                button.addEventListener('mousedown', pressHandler);
+                button.addEventListener('mouseup', releaseHandler);
+                button.addEventListener('mouseleave', releaseHandler);
+            });
+        }
+
+        function setupFullscreen() {
+            const fullscreenButton = document.getElementById('fullscreenButton');
+            const landscapeFullscreenOverlay = document.getElementById('landscapeFullscreenOverlay');
+            const landscapeFullscreenBtn = document.getElementById('landscapeFullscreenBtn');
+            const fullscreenWarning = document.getElementById('fullscreenWarning');
+            const closeWarningBtn = document.getElementById('closeFullscreenWarning');
+            const iosInstallModal = document.getElementById('iosInstallModal');
+            const closeIosInstallBtn = document.getElementById('closeIosInstallModal');
+
+
+            const enableControls = () => {
+                if(controlsEnabled) return;
+                controlsEnabled = true;
+                landscapeFullscreenOverlay.classList.remove('show');
+            };
+
+            closeIosInstallBtn.addEventListener('click', () => {
+                iosInstallModal.style.display = 'none';
+                enableControls();
+            });
+
+            function showFullscreenWarning() {
+                fullscreenWarning.style.display = 'flex';
+                fullscreenButton.style.display = 'none';
+                landscapeFullscreenOverlay.classList.remove('show');
+            }
+
+            closeWarningBtn.addEventListener('click', () => {
+                fullscreenWarning.style.display = 'none';
+                enableControls();
+            });
+
+            function toggleFullscreen() {
+                enableControls();
+
+                // --- iOS Handling ---
+                if (isIOS && !isInStandaloneMode) {
+                    iosInstallModal.style.display = 'flex';
+                    return;
+                }
+                // --- End iOS Handling ---
+
+                const requestFullscreen =
+                    document.documentElement.requestFullscreen ||
+                    document.documentElement.webkitRequestFullscreen ||
+                    document.documentElement.mozRequestFullScreen ||
+                    document.documentElement.msRequestFullscreen;
+
+                if (!requestFullscreen) {
+                    showFullscreenWarning();
+                    return;
+                }
+
+                if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+                    const result = requestFullscreen.call(document.documentElement);
+                    if (result && result.catch) result.catch(showFullscreenWarning);
+                } else {
+                    const exitFullscreen =
+                        document.exitFullscreen ||
+                        document.webkitExitFullscreen ||
+                        document.mozCancelFullScreen ||
+                        document.msExitFullscreen;
+
+                    if (exitFullscreen) {
+                        const result = exitFullscreen.call(document);
+                        if (result && result.catch) result.catch(() => {});
+                    }
+                }
+            }
+
+            fullscreenButton.addEventListener('click', toggleFullscreen);
+            landscapeFullscreenBtn.addEventListener('click', toggleFullscreen);
+        }
+
+        function connectWebSocket() {
+            if (SESSION_VERSION !== '1' || !/^[A-F0-9]{12}$/.test(ROOM) || !/^[a-f0-9]{32}$/i.test(CONTROLLER_TOKEN)) {
+                updateConnectionStatus('invalid or expired join link', false);
+                return;
+            }
+            if (!/^wss:\/\//i.test(RELAY_URL) && !/^ws:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/i.test(RELAY_URL)) {
+                updateConnectionStatus('controller relay is not configured', false);
+                return;
+            }
+            startOnline();
+        }
+
+        function startOnline() {
+            if (stopRequested || !navigator.onLine) return;
+            if (websocket && (websocket.readyState === WebSocket.CONNECTING || websocket.readyState === WebSocket.OPEN)) return;
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+            const endpoint = RELAY_URL.replace(/\/+$/, '') + (RELAY_URL.replace(/\/+$/, '').endsWith('/v1/connect') ? '' : '/v1/connect');
+            startSocket(endpoint);
+        }
+
+        function startSocket(url) {
+            const generation = ++socketGeneration;
+            let ws;
+            try { ws = new WebSocket(url); } catch (error) { scheduleReconnect('connection failed'); return; }
+            websocket = ws;
+            gameplayReady = false;
+            updateConnectionStatus('connecting to game...', false);
+            ws.onopen = function() {
+                if (stopRequested || generation !== socketGeneration) { ws.close(); return; }
+                ws.send(JSON.stringify({
+                    v: 1,
+                    type: 'auth',
+                    role: 'controller',
+                    room: ROOM,
+                    controllerToken: CONTROLLER_TOKEN,
+                    controllerId: CONTROLLER_ID
+                }));
+                updateConnectionStatus('authenticating...', false);
+            };
+            ws.onmessage = function(event) {
+                if (generation !== socketGeneration || typeof event.data !== 'string') return;
+                const message = event.data;
+                if (message.startsWith('{')) {
+                    let envelope;
+                    try { envelope = JSON.parse(message); } catch (error) { return; }
+                    if (envelope.v !== 1) return;
+                    if (handleRtcSignaling(envelope)) return;
+                    if (envelope.type === 'relay_ready') {
+                        ws.send('c:' + name + ':' + numAxes + ':' + numButtons);
+                        updateConnectionStatus(envelope.hostOnline ? 'waiting for game...' : 'game reconnecting...', false);
+                    } else if (envelope.type === 'host_offline') {
+                        releaseAllInputs(false);
+                        gameplayReady = false;
+                        updateConnectionStatus('game reconnecting...', false);
+                    }
+                    return;
+                }
+                if (message === 'ping') { ws.send('pong'); return; }
+                handleMessage(message);
+            };
+            ws.onclose = function(event) {
+                if (generation !== socketGeneration) return;
+                websocket = null;
+                gameplayReady = false;
+                clearTimeout(axisFlushTimer);
+                axisFlushTimer = null;
+                pendingAxisMessages.clear();
+                releaseAllInputs(false);
+                stopPingInterval();
+                cleanupWebRTC();
+                if ([4400, 4403].includes(event.code)) {
+                    updateConnectionStatus('join link rejected', false);
+                    return;
+                }
+                scheduleReconnect('disconnected');
+            };
+            ws.onerror = function() { if (generation === socketGeneration) updateConnectionStatus('connection interrupted', false); };
+        }
+
+        function scheduleReconnect(status) {
+            if (stopRequested || reconnectTimer) return;
+            updateConnectionStatus(status + ' • retrying', false);
+            const delay = Math.min(15000, 500 * (2 ** Math.min(reconnectAttempt++, 5))) + Math.floor(Math.random() * 250);
+            reconnectTimer = setTimeout(() => { reconnectTimer = null; startOnline(); }, delay);
+        }
+
+        function releaseAllInputs(sendNeutral) {
+            clearTimeout(axisFlushTimer);
+            axisFlushTimer = null;
+            pendingAxisMessages.clear();
+            leftJoystick.isActive = false;
+            leftJoystick.touchId = null;
+            document.getElementById('joyInnerLeft').style.transform = 'translate(-50%, -50%)';
+            joyLeftX = 0;
+            joyLeftY = 0;
+
+            rightJoystick.isActive = false;
+            rightJoystick.touchId = null;
+            document.getElementById('joyInnerRight').style.transform = 'translate(-50%, -50%)';
+            joyRightX = 0;
+            joyRightY = 0;
+
+            if (sendNeutral && gameplayReady && websocket && websocket.readyState === WebSocket.OPEN) {
+                for (let axis = 0; axis < 6; axis++) websocket.send('a:' + axis + ':0');
+                document.querySelectorAll('[data-button].pressed').forEach(button => websocket.send('bu:' + button.dataset.button));
+            }
+            document.querySelectorAll('.pressed').forEach(element => element.classList.remove('pressed'));
+        }
+
+        function updateConnectionStatus(status, isConnected) {
+            const connectionElement = document.getElementById('connection');
+            connectionElement.textContent = status;
+            connectionElement.className = isConnected ? 'status-connected' : 'status-disconnected';
+        }
+
+        function checkOrientation() {
+            const orientationWarning = document.getElementById('orientationWarning');
+            const landscapeFullscreenOverlay = document.getElementById('landscapeFullscreenOverlay');
+            const isPortrait = window.innerHeight > window.innerWidth;
+            const isMobile = window.innerWidth < 1200 || ('ontouchstart' in window);
+            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement ||
+                                 document.mozFullScreenElement || document.msFullscreenElement;
+
+            if (isPortrait && isMobile) {
+                orientationWarning.classList.add('show');
+                landscapeFullscreenOverlay.classList.remove('show');
+            } else if (!isPortrait && isMobile && !isFullscreen && !controlsEnabled && !isIOS) {
+                // For non-iOS devices, show the fullscreen button overlay
+                orientationWarning.classList.remove('show');
+                landscapeFullscreenOverlay.classList.add('show');
+            } else {
+                orientationWarning.classList.remove('show');
+                landscapeFullscreenOverlay.classList.remove('show');
+                if(!controlsEnabled && !isPortrait) {
+                    // if it's not prompting for fullscreen, enable controls
+                    controlsEnabled = true;
+                }
+            }
+        }
+
+        window.addEventListener('orientationchange', () => {
+            setTimeout(checkOrientation, 100);
+        });
+
+        window.addEventListener('resize', checkOrientation);
+
+        const onFullscreenChange = () => {
+            controlsEnabled = true;
+            checkOrientation();
+            adjustFullscreenPositioning();
+        };
+        document.addEventListener('fullscreenchange', onFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+        document.addEventListener('mozfullscreenchange', onFullscreenChange);
+        document.addEventListener('MSFullscreenChange', onFullscreenChange);
+
+        function adjustFullscreenPositioning() {
+            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement ||
+                                 document.mozFullScreenElement || document.msFullscreenElement;
+
+            const rightJoystick = document.querySelector('.joystick-right');
+            const faceButtonsContainer = document.querySelector('.face-buttons-container');
+            const fullscreenButton = document.getElementById('fullscreenButton');
+
+            if (isFullscreen) {
+                rightJoystick.style.right = '15dvw';
+                faceButtonsContainer.style.right = '15dvw';
+                if (fullscreenButton) fullscreenButton.style.right = '15dvw';
+            } else {
+                rightJoystick.style.right = '';
+                faceButtonsContainer.style.right = '';
+                if (fullscreenButton) fullscreenButton.style.right = '';
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) releaseAllInputs(true);
+            else if (!websocket || websocket.readyState === WebSocket.CLOSED) startOnline();
+        });
+        window.addEventListener('blur', () => releaseAllInputs(true));
+        window.addEventListener('offline', () => {
+            releaseAllInputs(true);
+            updateConnectionStatus('offline', false);
+        });
+        window.addEventListener('online', () => {
+            if (!websocket || websocket.readyState === WebSocket.CLOSED) startOnline();
+        });
+        window.addEventListener('pagehide', () => {
+            stopRequested = true;
+            clearTimeout(reconnectTimer);
+            releaseAllInputs(true);
+            const closingSocket = websocket;
+            websocket = null;
+            socketGeneration++;
+            if (closingSocket && closingSocket.readyState === WebSocket.OPEN) closingSocket.close(1000, 'page hidden');
+            else if (closingSocket && closingSocket.readyState === WebSocket.CONNECTING) closingSocket.onopen = () => closingSocket.close(1000, 'page hidden');
+        });
+        window.addEventListener('pageshow', () => {
+            if (!stopRequested) return;
+            stopRequested = false;
+            startOnline();
+        });
+
+        window.addEventListener('load', () => {
+             // If the app is launched from the Home Screen on iOS, it's already "fullscreen".
+            if (isIOS && isInStandaloneMode) {
+                document.getElementById('fullscreenButton').style.display = 'none';
+                controlsEnabled = true; // Automatically enable controls.
+            }
+
+            init();
+            checkOrientation();
+            adjustFullscreenPositioning();
+        });
     </script>
-    <p><a href="./">Open the controller</a></p>
 </body>
 </html>
