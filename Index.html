@@ -160,9 +160,23 @@
         const fragmentParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
         const fbRoom = fragmentParams.get('r');
         const fbToken = fragmentParams.get('t');
+		const supportsLanHandshake = fragmentParams.get('lh') === '1';
         const fallbackUrl = (fbRoom && fbToken)
             ? 'online.html#v=1&room=' + encodeURIComponent(fbRoom) + '&token=' + encodeURIComponent(fbToken)
             : null;
+		const fallbackAbsoluteUrl = fallbackUrl ? new URL(fallbackUrl, window.location.href).href : null;
+		let controllerWindow = null;
+		let fallbackTimer = null;
+
+		window.addEventListener('message', (event) => {
+			if (controllerWindow &&
+				event.source === controllerWindow &&
+				event.origin === new URL(targetUrl).origin &&
+				event.data === 'lof-lan-controller-ready') {
+				clearTimeout(fallbackTimer);
+				fallbackTimer = null;
+			}
+		});
 
         ipDisplay.querySelector('span').innerText = targetUrl || 'invalid link';
         ipDisplay.classList.remove('opacity-0');
@@ -184,20 +198,34 @@
                 return;
             }
 
-            // An HTTPS page cannot preflight an HTTP LAN server with fetch.
-            // A top-level navigation from this user gesture is permitted.
+            // Keep this HTTPS page alive while the child attempts the HTTP LAN
+            // controller. If the LAN page never acknowledges, redirect that
+            // same child to the authenticated online controller.
             btnText.innerText = 'OPENING...';
             btn.disabled = true;
 
-            // If we have an online fallback and the LAN page hasn't loaded
-            // within 3 seconds, redirect to the online controller.
-            if (fallbackUrl) {
-                setTimeout(() => {
-                    window.location.replace(fallbackUrl);
-                }, 3000);
-            }
+			if (!fallbackAbsoluteUrl || !supportsLanHandshake) {
+				window.location.assign(targetUrl);
+				return;
+			}
 
-            window.location.assign(targetUrl);
+			controllerWindow = window.open(targetUrl, 'lof-controller');
+
+			if (!controllerWindow) {
+				window.location.assign(fallbackAbsoluteUrl || targetUrl);
+				return;
+			}
+
+            if (fallbackAbsoluteUrl) {
+                fallbackTimer = setTimeout(() => {
+					try {
+						controllerWindow.location.href = fallbackAbsoluteUrl;
+					}
+					catch (_) {
+						window.location.assign(fallbackAbsoluteUrl);
+					}
+                }, 5000);
+            }
         });
 
         closeBtn.addEventListener('click', () => {
