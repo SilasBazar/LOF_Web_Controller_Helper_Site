@@ -31,6 +31,37 @@
             transform: rotate(0deg) scale(1.02) !important;
         }
 
+        /* Manual online fallback button (revealed after JOIN) */
+        #online-fallback-btn {
+            display: block;
+            width: 100%;
+            margin-top: 8px;
+            background: #FF9800;
+            color: #fff;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 900;
+            font-size: 14px;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 3px 0 #E65100;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        #online-fallback-btn span {
+            display: inline-block;
+            margin-left: 4px;
+            font-size: 16px;
+        }
+        #online-fallback-btn:active {
+            transform: translateY(1px);
+            box-shadow: none;
+        }
+        #online-fallback-btn.hidden {
+            display: none;
+        }
+
     </style>
 </head>
 <body class="bg-gradient-to-b from-[#4FD1C5] via-[#81E6D9] to-[#CCFBF1] min-h-screen flex items-start justify-start md:items-center md:justify-center p-4 font-nunito overflow-x-hidden overflow-y-auto relative">
@@ -87,6 +118,8 @@
                     <p id="target-ip-display" class="text-center text-xs text-gray-400 mt-2 font-bold opacity-0 transition-opacity">
                         Target: <span class="font-mono break-all">searching...</span>
                     </p>
+                    <button id="online-fallback-btn" class="hidden" type="button">Can't connect? <span>PLAY ONLINE</span></button>
+
                 </div>
             </div>
 
@@ -151,6 +184,7 @@
         const btnText = btn.querySelector('span');
         const ipDisplay = document.getElementById('target-ip-display');
         const errorIpDisplay = document.getElementById('error-ip-display');
+        const onlineBtn = document.getElementById('online-fallback-btn');
 
         const targetApi = window.LOFControllerTarget;
         const rawTarget = targetApi ? targetApi.readControllerTarget(window.location.search, window.location.hash) : null;
@@ -167,6 +201,19 @@
 		const fallbackAbsoluteUrl = fallbackUrl ? new URL(fallbackUrl, window.location.href).href : null;
 		let controllerWindow = null;
 		let fallbackTimer = null;
+		let joinedAt = 0;
+
+		function redirectChildOnline() {
+			if (!controllerWindow || !fallbackAbsoluteUrl) return;
+			onlineBtn.classList.remove('hidden');
+			try {
+				controllerWindow.location.href = fallbackAbsoluteUrl;
+			}
+			catch (_) {
+				try { controllerWindow.close(); } catch (_) {}
+				window.location.assign(fallbackAbsoluteUrl);
+			}
+		}
 
 		window.addEventListener('message', (event) => {
 			if (controllerWindow &&
@@ -175,7 +222,32 @@
 				event.data === 'lof-lan-controller-ready') {
 				clearTimeout(fallbackTimer);
 				fallbackTimer = null;
+				onlineBtn.classList.add('hidden');
 			}
+		});
+
+		// Mobile browsers can freeze this tab while the LAN attempt runs in the
+		// foreground child. When the user returns here after the fallback
+		// deadline has passed, fire it immediately instead of waiting for a
+		// throttled timer; before the deadline the LAN attempt is still healthy.
+		document.addEventListener('visibilitychange', () => {
+			if (document.visibilityState === 'visible' &&
+				controllerWindow && fallbackTimer !== null &&
+				Date.now() - joinedAt >= 5000) {
+				clearTimeout(fallbackTimer);
+				fallbackTimer = null;
+				redirectChildOnline();
+			}
+		});
+
+		onlineBtn.addEventListener('click', () => {
+			if (!fallbackAbsoluteUrl) return;
+			clearTimeout(fallbackTimer);
+			fallbackTimer = null;
+			const child = controllerWindow;
+			controllerWindow = null;
+			if (child) { try { child.close(); } catch (_) {} }
+			window.location.assign(fallbackAbsoluteUrl);
 		});
 
         ipDisplay.querySelector('span').innerText = targetUrl || 'invalid link';
@@ -198,9 +270,6 @@
                 return;
             }
 
-            // Keep this HTTPS page alive while the child attempts the HTTP LAN
-            // controller. If the LAN page never acknowledges, redirect that
-            // same child to the authenticated online controller.
             btnText.innerText = 'OPENING...';
             btn.disabled = true;
 
@@ -209,23 +278,34 @@
 				return;
 			}
 
-			controllerWindow = window.open(targetUrl, 'lof-controller');
-
-			if (!controllerWindow) {
-				window.location.assign(fallbackAbsoluteUrl || targetUrl);
+			// Chrome on Android exposes the network type. On cellular the LAN
+			// address is unreachable, so skip the doomed attempt and join the
+			// online controller directly in this tab.
+			const connectionType = (typeof navigator !== 'undefined' &&
+				navigator.connection && navigator.connection.type) || undefined;
+			const lanLikely = connectionType === undefined ||
+				connectionType === 'wifi' || connectionType === 'ethernet';
+			if (!lanLikely) {
+				window.location.assign(fallbackAbsoluteUrl);
 				return;
 			}
 
-            if (fallbackAbsoluteUrl) {
-                fallbackTimer = setTimeout(() => {
-					try {
-						controllerWindow.location.href = fallbackAbsoluteUrl;
-					}
-					catch (_) {
-						window.location.assign(fallbackAbsoluteUrl);
-					}
-                }, 5000);
-            }
+			// Keep this HTTPS page alive while the child attempts the HTTP LAN
+			// controller. If the LAN page never acknowledges, redirect that
+			// same child to the authenticated online controller.
+			controllerWindow = window.open(targetUrl, 'lof-controller');
+
+			if (!controllerWindow) {
+				window.location.assign(fallbackAbsoluteUrl);
+				return;
+			}
+
+			onlineBtn.classList.remove('hidden');
+			joinedAt = Date.now();
+			fallbackTimer = setTimeout(() => {
+				fallbackTimer = null;
+				redirectChildOnline();
+			}, 5000);
         });
 
         closeBtn.addEventListener('click', () => {
