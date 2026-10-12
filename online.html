@@ -620,6 +620,15 @@
         let reconnectTimer = null;
         let gameplayReady = false;
         let stopRequested = false;
+        // Self-healing for "room not found" (4404) and "host gone" (4410):
+        // probe quickly for a short window — covers the game still
+        // registering, a relay restart, or the game restarting with the same
+        // room code. After the window, surface the re-scan fallback and keep
+        // slow background retries going.
+        const MISSING_ROOM_RETRY_LIMIT = 10;
+        const MISSING_ROOM_RETRY_DELAY_MS = 700;
+        const ROOM_MISSING_MESSAGE = 'Game not found - scan the QR code in the game again';
+        let missingRoomAttempts = 0;
         const pendingAxisMessages = new Map();
         let axisFlushTimer = null;
         let deviceID = -1;
@@ -955,6 +964,7 @@
                 document.getElementById('player').textContent = player;
                 gameplayReady = true;
                 reconnectAttempt = 0;
+                missingRoomAttempts = 0;
                 releaseAllInputs(true);
                 updateConnectionStatus('connected - Online', true);
                 startPingInterval();
@@ -1192,7 +1202,20 @@
                 stopPingInterval();
                 cleanupWebRTC();
                 if ([4400, 4403].includes(event.code)) {
-                    updateConnectionStatus('join link rejected', false);
+                    updateConnectionStatus('join link rejected - check the link and scan again', false);
+                    return;
+                }
+                if (event.code === 4404 || event.code === 4410) {
+                    if (missingRoomAttempts < MISSING_ROOM_RETRY_LIMIT) {
+                        missingRoomAttempts++;
+                        scheduleReconnect('finding game...', MISSING_ROOM_RETRY_DELAY_MS);
+                        return;
+                    }
+                    // Fast window exhausted: show the one useful action and
+                    // keep retrying in the background — if the game comes
+                    // back with the same room code the player rejoins
+                    // without doing anything.
+                    scheduleReconnect(ROOM_MISSING_MESSAGE);
                     return;
                 }
                 scheduleReconnect('disconnected');
@@ -1200,10 +1223,12 @@
             ws.onerror = function() { if (generation === socketGeneration) updateConnectionStatus('connection interrupted', false); };
         }
 
-        function scheduleReconnect(status) {
+        function scheduleReconnect(status, delayOverrideMs) {
             if (stopRequested || reconnectTimer) return;
             updateConnectionStatus(status + ' • retrying', false);
-            const delay = Math.min(15000, 500 * (2 ** Math.min(reconnectAttempt++, 5))) + Math.floor(Math.random() * 250);
+            const delay = (typeof delayOverrideMs === 'number' && delayOverrideMs > 0)
+                ? delayOverrideMs + Math.floor(Math.random() * 150)
+                : Math.min(15000, 500 * (2 ** Math.min(reconnectAttempt++, 5))) + Math.floor(Math.random() * 250);
             reconnectTimer = setTimeout(() => { reconnectTimer = null; startOnline(); }, delay);
         }
 
